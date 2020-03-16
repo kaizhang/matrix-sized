@@ -1,0 +1,73 @@
+name: matrix-sized
+version: "0.0.1"
+category: "Math"
+synopsis:    "Haskell matrix library with interface to the Eigen C++ library"
+description: "Haskell matrix library with interface to the Eigen C++ library"
+license: "BSD-3-Clause"
+author: "Kai Zhang"
+copyright: "(c) 2020 Kai Zhang"
+maintainer: "kai@kzhang.org"
+
+ghc-options: -Wall
+
+extra-source-files:
+  - cbits/*.h
+
+  - eigen3/Eigen/*
+  - eigen3/Eigen/src/**/*.h
+  - eigen3/Eigen/src/Core/**/*.h
+  - eigen3/Eigen/src/Core/arch/**/*.h
+  - eigen3/Eigen/src/Geometry/arch/*.h
+  - eigen3/Eigen/src/LU/arch/*.h
+
+  - spectra/Spectra/*.h
+  - spectra/Spectra/**/*.h
+  - spectra/Spectra/MatOp/**/*.h
+
+dependencies:
+  - base >= 4.10 && < 5
+  - binary
+  - bytestring
+  - deepseq
+  - primitive >= 0.6.4.0
+  - singletons
+  - vector >= 0.11
+
+library:
+  source-dirs:
+    - src
+  exposed-modules:
+    - Data.Matrix.Dense
+    - Data.Matrix.Dense.Mutable
+    - Data.Matrix.Sparse.Mutable
+    - Data.Matrix.LinearAlgebra
+    - Data.Matrix.LinearAlgebra.Types
+    - Data.Matrix.LinearAlgebra.EigenSolver
+
+  other-modules: 
+    - Data.Matrix.Internal.Class
+    - Data.Matrix.Internal.Class.Mutable
+    - Data.Matrix.Internal.LinearAlgebra
+
+  include-dirs:
+    - eigen3
+    - spectra
+    - cbits
+  cxx-sources:
+    - cbits/*.cpp
+  cxx-options: "-std=c++11"
+  extra-libraries: stdc++
+
+
+#tests:
+#  spec:
+#    main: "tests.hs"
+#    ghc-options: "-threaded -O0"
+
+#    source-dirs:
+#      - test
+
+#    dependencies:
+#      - base
+
+github: kaizhang/eigen 
