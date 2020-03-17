@@ -4,15 +4,15 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6f5b7f40e892758f91cc8533b9e122d68522d6696e9b4daccc217203be4e8261
+-- hash: 21043673bbf64f17a1f4824d311ac07575d568c6aee192e61ba87cf5b70d9a3f
 
 name:           matrix-sized
 version:        0.0.1
 synopsis:       Haskell matrix library with interface to the Eigen C++ library
 description:    Haskell matrix library with interface to the Eigen C++ library
 category:       Math
-homepage:       https://github.com/kaizhang/eigen#readme
-bug-reports:    https://github.com/kaizhang/eigen/issues
+homepage:       https://github.com/kaizhang/matrix-sized#readme
+bug-reports:    https://github.com/kaizhang/matrix-sized/issues
 author:         Kai Zhang
 maintainer:     kai@kzhang.org
 copyright:      (c) 2020 Kai Zhang
@@ -27,7 +27,6 @@ extra-source-files:
     cbits/eigen-sparse.h
     eigen3/Eigen/Cholesky
     eigen3/Eigen/CholmodSupport
-    eigen3/Eigen/CMakeLists.txt
     eigen3/Eigen/Core
     eigen3/Eigen/Dense
     eigen3/Eigen/Eigen
@@ -376,19 +375,21 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/kaizhang/eigen
+  location: https://github.com/kaizhang/matrix-sized
 
 library
   exposed-modules:
       Data.Matrix.Dense
       Data.Matrix.Dense.Mutable
+      Data.Matrix.Sparse
+      Data.Matrix.Sparse.Mutable
       Data.Matrix.LinearAlgebra
       Data.Matrix.LinearAlgebra.Types
       Data.Matrix.LinearAlgebra.EigenSolver
   other-modules:
       Data.Matrix.Internal.Class
       Data.Matrix.Internal.Class.Mutable
-      Data.Matrix.Internal.Eigen
+      Data.Matrix.Internal.LinearAlgebra
   hs-source-dirs:
       src
   ghc-options: -Wall

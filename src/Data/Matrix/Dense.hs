@@ -23,8 +23,8 @@ module Data.Matrix.Dense
 
     -- ** Query
     , (C.!)
-    , takeRow
-    , takeColumn
+    , C.takeRow
+    , C.takeColumn
     , C.takeDiag
 
     -- ** Unsafe Query
@@ -34,20 +34,22 @@ module Data.Matrix.Dense
 
     -- * Construction
     , C.empty
-    , fromVector
-    , fromList
+    , C.matrix
+    , C.fromVector
+    , C.fromList
     , fromRows
     , fromColumns
     , C.unsafeFromVector
 
     -- * Conversions
     , C.flatten
-    , toRows
-    , toColumns
+    , C.toRows
+    , C.toColumns
     , C.toList
 
     -- * Different matrix types
     , convert
+    , C.convertAny
 
     , transpose
 {-
@@ -100,13 +102,13 @@ module Data.Matrix.Dense
     , unzip4
     , unzip5
     , unzip6
+    -}
 
     -- * Monadic sequencing
-    , Data.Matrix.Generic.sequence
-    , Data.Matrix.Generic.sequence_
+    , sequence
+    , sequence_
 
     , generate
-    -}
 
     -- * Mutable matrix
     , C.thaw
@@ -122,7 +124,7 @@ import           Control.Monad                     (foldM, foldM_, liftM)
 import qualified Data.Foldable                     as F
 import qualified Data.Vector.Generic               as G
 import qualified Data.Vector.Generic.Mutable       as GM
-import           Prelude                           hiding (mapM, mapM_, zipWith, map)
+import Prelude hiding (mapM, mapM_, zipWith, map, sequence, sequence_)
 import GHC.TypeLits (type (<=))
 import Data.Singletons
 import qualified Data.List as L
@@ -137,6 +139,12 @@ type instance C.Mutable Matrix = MMatrix
 -- | Column-major matrix
 data Matrix :: C.MatrixKind where
     Matrix :: (SingI r, SingI c) => v a -> Matrix r c v a
+
+instance (G.Vector v a, Show a) => Show (Matrix r c v a) where
+    show mat = printf "(%d x %d)\n%s" r c vals
+      where
+        (r,c) = C.dim mat
+        vals = unlines $ L.map (unwords . L.map show . G.toList) $ C.toRows mat
 
 instance (G.Vector v a, Eq (v a)) => Eq (Matrix r c v a) where
     (==) (Matrix v1) (Matrix v2) = v1 == v2
@@ -203,63 +211,15 @@ instance G.Vector v a => C.Matrix Matrix v a where
 
 --reshape :: G.Vector v a => Matrix v a -> (Int, Int) -> Matrix v a
 
--- | Construct matrix from a vector containg columns.
-fromVector :: forall m r c v a. (G.Vector v a, SingI r, SingI c)
-           => v a -> Matrix r c v a
-fromVector vec | r*c /= n = error errMsg
-               | otherwise = C.unsafeFromVector vec
-  where
-    errMsg = printf "fromVector: incorrect length (%d * %d != %d)" r c n
-    n = G.length vec
-    r = fromIntegral $ fromSing (sing :: Sing r)
-    c = fromIntegral $ fromSing (sing :: Sing c)
-{-# INLINE fromVector #-}
-
--- | Construct matrix from a list containg columns.
-fromList :: (G.Vector v a, SingI r, SingI c)
-         => [a] -> Matrix r c v a
-fromList = fromVector . G.fromList
-{-# INLINE fromList #-}
-
 -- | O(m*n) Create matrix from rows
 fromRows :: (G.Vector v a, SingI r, SingI c) => [v a] -> Matrix r c v a
-fromRows = transpose . fromVector . G.concat
+fromRows = transpose . C.unsafeFromVector . G.concat
 {-# INLINE fromRows #-}
-
--- | Extract a row.
-takeRow :: forall r c v a i. (G.Vector v a, i <= r, SingI i)
-        => Matrix r c v a -> Sing i -> v a
-takeRow mat _ = C.unsafeTakeRow mat i
-  where
-    i = fromIntegral $ fromSing (sing :: Sing i)
-{-# INLINE takeRow #-}
-
--- | O(m) Return the rows
-toRows :: G.Vector v a => Matrix r c v a -> [v a]
-toRows mat = L.map (C.unsafeTakeRow mat) [0..r-1]
-  where
-    (r,_) = C.dim mat
-{-# INLINE toRows #-}
-
--- | Extract a row.
-takeColumn :: forall r c v a j. (G.Vector v a, j <= c, SingI j)
-           => Matrix r c v a -> Sing j -> v a
-takeColumn mat _ = C.unsafeTakeColumn mat j
-  where
-    j = fromIntegral $ fromSing (sing :: Sing j)
-{-# INLINE takeColumn #-}
-
--- | O(m*n) Return the columns
-toColumns :: G.Vector v a => Matrix r c v a -> [v a]
-toColumns mat = L.map (C.unsafeTakeColumn mat) [0..c-1]
-  where
-    (_,c) = C.dim mat
-{-# INLINE toColumns #-}
 
 -- | O(m*n) Create matrix from columns
 fromColumns :: (G.Vector v a, SingI r, SingI c)
             => [v a] -> Matrix r c v a
-fromColumns = fromVector . G.concat
+fromColumns = C.fromVector . G.concat
 {-# INLINE fromColumns #-}
 
 -- | O(m*n) Matrix transpose
@@ -300,11 +260,10 @@ diag d = diagRect 0 (n,n) d
 {-# INLINE diag #-}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
-diagRect :: (G.Vector v a, F.Foldable t)
+diagRect :: (G.Vector v a, F.Foldable t, SingI r, SingI c)
          => a         -- ^ default value
-         -> (Int, Int)
          -> t a       -- ^ diagonal
-         -> Matrix v a
+         -> Matrix r c v a
 diagRect z0 (r,c) d = fromVector (r,c) $ G.create $ GM.replicate n z0 >>= go d c
   where
     go xs c' v = F.foldlM f 0 xs >> return v
@@ -402,7 +361,7 @@ zipWith :: (G.Vector v a, G.Vector v b, G.Vector v c
            , SingI n, SingI m )
         => (a -> b -> c)
         -> Matrix n m v a -> Matrix n m v b -> Matrix n m v c
-zipWith f m1 m2 = fromVector $ G.zipWith f (C.flatten m1) $ C.flatten m2
+zipWith f m1 m2 = C.unsafeFromVector $ G.zipWith f (C.flatten m1) $ C.flatten m2
 {-# INLINE zipWith #-}
 
 zipWith3 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
@@ -410,7 +369,7 @@ zipWith3 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
          => (a -> b -> c -> d)
          -> Matrix n m v a -> Matrix n m v b -> Matrix n m v c
          -> Matrix n m v d
-zipWith3 f m1 m2 m3 = fromVector $
+zipWith3 f m1 m2 m3 = C.unsafeFromVector $
     G.zipWith3 f (C.flatten m1) (C.flatten m2) $ C.flatten m3
 {-# INLINE zipWith3 #-}
 
@@ -422,7 +381,7 @@ zipWith4 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d, G.Vector v 
          -> Matrix n m v c
          -> Matrix n m v d
          -> Matrix n m v e
-zipWith4 f m1 m2 m3 m4 = fromVector $
+zipWith4 f m1 m2 m3 m4 = C.unsafeFromVector $
     G.zipWith4 f (C.flatten m1) (C.flatten m2) (C.flatten m3) $ C.flatten m4
 {-# INLINE zipWith4 #-}
 
@@ -436,7 +395,7 @@ zipWith5 :: ( G.Vector v a, G.Vector v b, G.Vector v c,G.Vector v d
          -> Matrix n m v d
          -> Matrix n m v e
          -> Matrix n m v f
-zipWith5 f m1 m2 m3 m4 m5 = fromVector $
+zipWith5 f m1 m2 m3 m4 m5 = C.unsafeFromVector $
     G.zipWith5 f (C.flatten m1) (C.flatten m2)
     (C.flatten m3) (C.flatten m4) $ C.flatten m5
 {-# INLINE zipWith5 #-}
@@ -677,7 +636,7 @@ sequence_ (Matrix vec) = G.sequence_ vec
 
 generate :: forall r c v a. (G.Vector v a, SingI r, SingI c)
          => ((Int, Int) -> a) -> Matrix r c v a
-generate f = fromVector . G.generate (r*c) $ \i -> f (i `divMod` r)
+generate f = C.unsafeFromVector . G.generate (r*c) $ \i -> f (i `divMod` r)
   where
     r = fromIntegral $ fromSing (sing :: Sing r)
     c = fromIntegral $ fromSing (sing :: Sing c)

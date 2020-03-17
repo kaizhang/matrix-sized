@@ -39,6 +39,7 @@ library:
   exposed-modules:
     - Data.Matrix.Dense
     - Data.Matrix.Dense.Mutable
+    - Data.Matrix.Sparse
     - Data.Matrix.Sparse.Mutable
     - Data.Matrix.LinearAlgebra
     - Data.Matrix.LinearAlgebra.Types
@@ -70,4 +71,4 @@ library:
 #    dependencies:
 #      - base
 
-github: kaizhang/eigen 
+github: kaizhang/matrix-sized

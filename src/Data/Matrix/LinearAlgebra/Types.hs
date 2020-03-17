@@ -6,10 +6,12 @@ module Data.Matrix.LinearAlgebra.Types
     ( Numeric(..)
     , Matrix
     , MMatrix
+    , SparseMatrix
     , withFun1
     , withFun2
     , unsafeWith
     , unsafeWith'
+    , unsafeWithS
     ) where
 
 import Data.Vector.Storable (Vector, Storable)
@@ -23,12 +25,14 @@ import Data.Singletons
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
+import Data.Int
 
 import qualified Data.Matrix.Dense as D
 import qualified Data.Matrix.Dense.Mutable as DM
+import qualified Data.Matrix.Sparse as S
 import qualified Data.Matrix.Internal.Class.Mutable as CM
 import qualified Data.Matrix.Internal.Class as C
-import qualified Data.Matrix.Internal.Eigen as Internal
+import qualified Data.Matrix.Internal.LinearAlgebra as Internal
 
 class Storable a => Numeric a where
     foreignType :: a -> CInt
@@ -41,6 +45,7 @@ instance Numeric (Complex Double) where foreignType _ = 3
 type Matrix r c a = D.Matrix r c Vector a
 type MMatrix r c s a = DM.MMatrix r c MVector s a
 
+type SparseMatrix r c a = S.SparseMatrix r c Vector a
 
 withFun1 :: forall r1 c1 r2 c2 a. (SingI r2, SingI c2, Numeric a)
          => (CInt -> Ptr a -> CInt -> CInt -> Ptr a -> CInt -> CInt -> IO CString)
@@ -92,3 +97,19 @@ unsafeWith' mat@(DM.MMatrix vec) f = VSM.unsafeWith vec $ \p ->
   where
     (r,c) = CM.dim mat
 {-# INLINE unsafeWith' #-}
+
+-- | Pass a pointer to the matrix's data to the IO action.
+-- The data may not be modified through the pointer.
+unsafeWithS :: (Storable a, S.Zero a)
+            => SparseMatrix n m a
+            -> (Ptr a -> Ptr CInt -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt -> IO b)
+            -> IO b
+unsafeWithS mat@(S.SparseMatrix val inner outer) f = VS.unsafeWith val $ \pval ->
+    VS.unsafeWith inner $ \pinner ->
+        VS.unsafeWith outer $ \pouter ->
+            VS.unsafeWith innernnz $ \pnnz ->
+                f pval pinner pouter pnnz (fromIntegral r) (fromIntegral c) (fromIntegral $ VS.length val)
+  where
+    (r,c) = C.dim mat
+    innernnz = VS.generate c $ \i -> outer `VS.unsafeIndex` (i+1) - outer `VS.unsafeIndex` i
+{-# INLINE unsafeWithS #-}

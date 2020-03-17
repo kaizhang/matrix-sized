@@ -3,12 +3,12 @@ module Data.Matrix.Internal.LinearAlgebra
     ( c_mul
     , c_inverse
     , c_eigs
+    , c_seigs
     ) where
 
 import Data.Complex (Complex)
 import Foreign
 import Foreign.C.Types
-
 import Foreign.C.String
 
 foreign import ccall "eigen_mul"
@@ -27,3 +27,8 @@ foreign import ccall "eigen_inverse"
 foreign import ccall "spectral_eigs"
     c_eigs :: CInt -> Ptr (Complex Double)
            -> Ptr (Complex Double) -> Ptr Double -> CInt -> IO CString
+
+foreign import ccall "spectral_seigs"
+    c_seigs :: CInt -> Ptr (Complex Double) -> Ptr (Complex Double)
+            -> Ptr Double -> Ptr CInt -> Ptr CInt -> Ptr CInt
+            -> CInt -> CInt -> IO CString
