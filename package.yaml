@@ -24,6 +24,9 @@ extra-source-files:
   - spectra/Spectra/**/*.h
   - spectra/Spectra/MatOp/**/*.h
 
+  - README.md
+  - ChangeLog.md
+
 dependencies:
   - base >= 4.10 && < 5
   - binary
