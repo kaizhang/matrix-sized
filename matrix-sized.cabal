@@ -4,12 +4,12 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8797f64c8de21f5e8e58ec4189db1236151cc16f0e2f2298b0b7278cf32c920d
+-- hash: 32a85fe252d7c7ac4e14b5bdda92aa2b5b67b902bee14e17f98b64df94f58492
 
 name:           matrix-sized
 version:        0.0.1
-synopsis:       Haskell matrix library with interface to the Eigen C++ library
-description:    Haskell matrix library with interface to the Eigen C++ library
+synopsis:       Haskell matrix library with interface to C++ linear algebra libraries.
+description:    A Haskell implementation of matrices with statically known sizes. The library also comes with the bindings to high performance C++ linear algebra libraries such as Eigen and Spectra.
 category:       Math
 homepage:       https://github.com/kaizhang/matrix-sized#readme
 bug-reports:    https://github.com/kaizhang/matrix-sized/issues
@@ -368,6 +368,8 @@ extra-source-files:
     spectra/Spectra/Util/SelectionRule.h
     spectra/Spectra/Util/SimpleRandom.h
     spectra/Spectra/Util/TypeTraits.h
+    README.md
+    ChangeLog.md
 
 source-repository head
   type: git
