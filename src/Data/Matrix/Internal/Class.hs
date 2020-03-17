@@ -26,13 +26,16 @@ module Data.Matrix.Internal.Class
     , toList
     , create
     , convertAny
+    , mapM
+    , imapM
     ) where
 
 import           Control.Monad.Primitive     (PrimMonad, PrimState)
 import           Control.Monad.ST            (ST, runST)
 import qualified Data.Vector.Generic         as G
 import Text.Printf (printf)
-import Data.List
+import Prelude hiding (map, mapM, mapM_, sequence, sequence_)
+import qualified Data.List as L
 import Data.Kind (Type)
 import GHC.TypeLits (Nat, type (<=))
 import Data.Singletons (SingI, Sing, fromSing, sing)
@@ -95,7 +98,13 @@ class (MMatrix (Mutable mat) (G.Mutable v) a, G.Vector v a) => Matrix (mat :: Ma
                  => (Mutable mat) r c (G.Mutable v) (PrimState s) a
                  -> s (mat r c v a)
 
-    {-# MINIMAL dim, unsafeIndex, unsafeFromVector, thaw, unsafeThaw, freeze, unsafeFreeze #-}
+    map :: G.Vector v b => (a -> b) -> mat r c v a -> mat r c v b
+    imap :: G.Vector v b => ((Int, Int) -> a -> b) -> mat r c v a -> mat r c v b
+    imapM_ :: (Monad monad, Matrix mat v a)
+           => ((Int, Int) -> a -> monad b) -> mat r c v a -> monad ()
+    sequence :: (G.Vector v (monad a), Monad monad)
+             => mat r c v (monad a) -> monad (mat r c v a)
+    sequence_ :: (G.Vector v (monad a), Monad monad) => mat r c v (monad a) -> monad ()
 
 -- | Derived methods
 
@@ -119,7 +128,7 @@ cols = snd . dim
 {-# INLINE (!) #-}
 
 -- | Construct matrix from a vector containg columns.
-fromVector :: forall m r c v a. (G.Vector v a, SingI r, SingI c, Matrix m v a)
+fromVector :: forall m r c v a. (SingI r, SingI c, Matrix m v a)
            => v a -> m r c v a
 fromVector vec | r*c /= n = error errMsg
                | otherwise = unsafeFromVector vec
@@ -130,13 +139,13 @@ fromVector vec | r*c /= n = error errMsg
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE fromVector #-}
 
-matrix :: (G.Vector v a, SingI r, SingI c, Matrix m v a)
+matrix :: (SingI r, SingI c, Matrix m v a)
        => [[a]] -> m r c v a
-matrix = fromList . concat . transpose
+matrix = fromList . concat . L.transpose
 {-# INLINE matrix #-}
 
 -- | Construct matrix from a list containg columns.
-fromList :: (G.Vector v a, SingI r, SingI c, Matrix m v a)
+fromList :: (SingI r, SingI c, Matrix m v a)
          => [a] -> m r c v a
 fromList = fromVector . G.fromList
 {-# INLINE fromList #-}
@@ -162,7 +171,7 @@ convertAny = unsafeFromVector . G.convert . flatten
 {-# INLINE convertAny #-}
 
 -- | Extract a row.
-takeRow :: forall m r c v a i. (G.Vector v a, i <= r, SingI i, Matrix m v a)
+takeRow :: forall m r c v a i. (i <= r, SingI i, Matrix m v a)
         => m r c v a -> Sing i -> v a
 takeRow mat _ = unsafeTakeRow mat i
   where
@@ -170,14 +179,14 @@ takeRow mat _ = unsafeTakeRow mat i
 {-# INLINE takeRow #-}
 
 -- | O(m) Return the rows
-toRows :: (G.Vector v a, Matrix m v a) => m r c v a -> [v a]
-toRows mat = map (unsafeTakeRow mat) [0..r-1]
+toRows :: Matrix m v a => m r c v a -> [v a]
+toRows mat = L.map (unsafeTakeRow mat) [0..r-1]
   where
     (r,_) = dim mat
 {-# INLINE toRows #-}
 
 -- | Extract a row.
-takeColumn :: forall m r c v a j. (G.Vector v a, j <= c, SingI j, Matrix m v a)
+takeColumn :: forall m r c v a j. (j <= c, SingI j, Matrix m v a)
            => m r c v a -> Sing j -> v a
 takeColumn mat _ = unsafeTakeColumn mat j
   where
@@ -185,8 +194,19 @@ takeColumn mat _ = unsafeTakeColumn mat j
 {-# INLINE takeColumn #-}
 
 -- | O(m*n) Return the columns
-toColumns :: (G.Vector v a, Matrix m v a) => m r c v a -> [v a]
-toColumns mat = map (unsafeTakeColumn mat) [0..c-1]
+toColumns :: Matrix m v a => m r c v a -> [v a]
+toColumns mat = L.map (unsafeTakeColumn mat) [0..c-1]
   where
     (_,c) = dim mat
 {-# INLINE toColumns #-}
+
+mapM :: (G.Vector v (monad b), Monad monad, Matrix mat v a, Matrix mat v b)
+     => (a -> monad b) -> mat r c v a -> monad (mat r c v b)
+mapM f = sequence . map f
+{-# INLINE mapM #-}
+
+imapM :: (G.Vector v (monad b), Monad monad, Matrix mat v a, Matrix mat v b)
+      => ((Int, Int) -> a -> monad b)
+      -> mat r c v a -> monad (mat r c v b)
+imapM f = sequence . imap f
+{-# INLINE imapM #-}

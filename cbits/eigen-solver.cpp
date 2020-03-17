@@ -33,12 +33,11 @@ extern "C" RET spectral_seigs(
     const void* values,
     const void* outerIndexPtr,
     const void* innerIndices,
-    const void* nnz,
     int n, int s)
 {
     typedef Map< Matrix<T3,Dynamic,Dynamic> > MapComplexMatrix;
     typedef Map<const SparseMatrix<T1> > MapSparseMatrix;
-    MapSparseMatrix M(n, n, s, (int*)outerIndexPtr, (int*)innerIndices, (T1*)values, (int*)nnz);
+    MapSparseMatrix M(n, n, s, (int*)outerIndexPtr, (int*)innerIndices, (T1*)values);
     MapComplexMatrix D((T3*)d, k, 1);
     MapComplexMatrix V((T3*)v, n, k);
 
@@ -51,3 +50,15 @@ extern "C" RET spectral_seigs(
         V = eigs.eigenvectors();
     return 0;
 }
+
+template <class T>
+RET cholesky(void* px, const void* pa, int n)
+{
+    typedef Map< Matrix<T,Dynamic,Dynamic> > MapMatrix;
+    MapMatrix x((T*)px, n, n);
+    MapMatrix A((T*)pa, n, n);
+    x = A.llt().matrixL();
+    return 0;
+}
+API(cholesky, (int code,
+    void* px, const void* pa, int n), (px,pa,n));

@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 21043673bbf64f17a1f4824d311ac07575d568c6aee192e61ba87cf5b70d9a3f
+-- hash: 8797f64c8de21f5e8e58ec4189db1236151cc16f0e2f2298b0b7278cf32c920d
 
 name:           matrix-sized
 version:        0.0.1
@@ -20,11 +20,7 @@ license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    cbits/eigen-dense.h
-    cbits/eigen-la.h
     cbits/eigen-runtime.h
-    cbits/eigen-sparse-la.h
-    cbits/eigen-sparse.h
     eigen3/Eigen/Cholesky
     eigen3/Eigen/CholmodSupport
     eigen3/Eigen/Core
@@ -385,7 +381,6 @@ library
       Data.Matrix.Sparse.Mutable
       Data.Matrix.LinearAlgebra
       Data.Matrix.LinearAlgebra.Types
-      Data.Matrix.LinearAlgebra.EigenSolver
   other-modules:
       Data.Matrix.Internal.Class
       Data.Matrix.Internal.Class.Mutable
@@ -399,12 +394,9 @@ library
       spectra
       cbits
   cxx-sources:
-      cbits/eigen-dense.cpp
-      cbits/eigen-la.cpp
+      cbits/eigen-basic.cpp
       cbits/eigen-runtime.cpp
       cbits/eigen-solver.cpp
-      cbits/eigen-sparse-la.cpp
-      cbits/eigen-sparse.cpp
   extra-libraries:
       stdc++
   build-depends:

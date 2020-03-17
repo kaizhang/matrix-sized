@@ -6,6 +6,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -36,6 +37,9 @@ module Data.Matrix.Sparse
     , C.fromList
     , C.unsafeFromVector
 
+    , diag
+    , diagRect
+
     -- * Conversions
     , C.flatten
     , C.toList
@@ -52,8 +56,11 @@ import Data.Singletons
 import Control.Monad
 import           Data.Bits                         (shiftR)
 import Text.Printf (printf)
+import GHC.TypeLits (type (<=))
 import Foreign.C.Types
+import Data.Complex
 
+import qualified Data.Matrix.Dense as D
 import qualified Data.Matrix.Internal.Class as C
 import Data.Matrix.Sparse.Mutable
 
@@ -65,8 +72,17 @@ class Eq a => Zero a where
 instance Zero Int where
     zero = 0
 
+instance Zero Float where
+    zero = 0.0
+
 instance Zero Double where
     zero = 0.0
+
+instance Zero (Complex Float) where
+    zero = 0
+
+instance Zero (Complex Double) where
+    zero = 0
 
 instance Eq a => Zero ([] a) where
     zero = []
@@ -145,6 +161,26 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
 
     unsafeFreeze = undefined
     {-# INLINE unsafeFreeze #-}
+
+    map f (SparseMatrix vec inner outer) = SparseMatrix (G.map f vec) inner outer
+    imap = undefined
+    {-# INLINE map #-}
+
+-- | O(m*n) Create a square matrix with given diagonal.
+diag :: (G.Vector v a, Zero a, SingI n)
+     => D.Matrix n 1 v a       -- ^ diagonal
+     -> SparseMatrix n n v a
+diag = diagRect
+{-# INLINE diag #-}
+
+-- | O(m*n) Create a rectangular matrix with default values and given diagonal
+diagRect :: (G.Vector v a, Zero a, SingI r, SingI c, n <= r, n <= c)
+         => D.Matrix n 1 v a       -- ^ diagonal
+         -> SparseMatrix r c v a
+diagRect d = SparseMatrix (C.flatten d) (S.enumFromN 0 n) (S.enumFromN 0 $ n + 1)
+  where
+    n = C.rows d
+{-# INLINE diagRect #-}
 
 binarySearchByBounds :: S.Vector CInt -> CInt -> Int -> Int -> Maybe Int
 binarySearchByBounds vec x = loop

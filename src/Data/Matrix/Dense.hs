@@ -41,72 +41,42 @@ module Data.Matrix.Dense
     , fromColumns
     , C.unsafeFromVector
 
+    , diag
+    , diagRect
+
     -- * Conversions
     , C.flatten
     , C.toRows
     , C.toColumns
     , C.toList
 
-    -- * Different matrix types
+    -- * Conversion between Different matrix types
     , convert
     , C.convertAny
 
     , transpose
-{-
-    , subMatrix
-    , ident
-    , diag
-    , diagRect
-    , fromBlocks
-    , isSymmetric
-    , force
 
-    , Data.Matrix.Generic.foldl
-
-    -- * Mapping
-    , Data.Matrix.Generic.map
-    , imap
-
-    -- * Monadic mapping
-    , mapM
-    , imapM
-    , mapM_
-    , imapM_
-    , forM
-    , forM_
+    , C.mapM
+    , C.imapM
 
     -- * Zipping
-    , Data.Matrix.Generic.zipWith
-    , Data.Matrix.Generic.zipWith3
+    , zip
+    , zip3
+    , zipWith
+    , zipWith3
     , zipWith4
     , zipWith5
     , zipWith6
     , izipWith
     , izipWith3
-    , izipWith4
-    , izipWith5
-    , izipWith6
-    , Data.Matrix.Generic.zip
-    , Data.Matrix.Generic.zip3
-    , zip4
-    , zip5
-    , zip6
 
     -- * Monadic Zipping
     , zipWithM
     , zipWithM_
 
     -- * Unzipping
-    , Data.Matrix.Generic.unzip
-    , Data.Matrix.Generic.unzip3
-    , unzip4
-    , unzip5
-    , unzip6
-    -}
-
-    -- * Monadic sequencing
-    , sequence
-    , sequence_
+    , unzip
+    , unzip3
 
     , generate
 
@@ -118,21 +88,19 @@ module Data.Matrix.Dense
     , C.create
     ) where
 
-import           Control.Arrow                     ((&&&), (***))
 import           Control.DeepSeq                   hiding (force)
-import           Control.Monad                     (foldM, foldM_, liftM)
-import qualified Data.Foldable                     as F
+import           Control.Monad                     (liftM)
 import qualified Data.Vector.Generic               as G
-import qualified Data.Vector.Generic.Mutable       as GM
-import Prelude hiding (mapM, mapM_, zipWith, map, sequence, sequence_)
+import Prelude hiding (mapM, mapM_, zipWith, map, sequence, sequence_, zip, unzip, zipWith3, zip3, unzip3)
 import GHC.TypeLits (type (<=))
 import Data.Singletons
+import Data.Tuple (swap)
 import qualified Data.List as L
 import Text.Printf (printf)
 
 import           Data.Matrix.Dense.Mutable (MMatrix (..))
+import qualified Data.Matrix.Dense.Mutable as DM
 import qualified Data.Matrix.Internal.Class as C
-import           GHC.Generics                      (Generic)
 
 type instance C.Mutable Matrix = MMatrix
 
@@ -154,15 +122,15 @@ instance (SingI r, SingI c, G.Vector v a, Num a) =>
         m1 + m2 = zipWith (+) m1 m2
         m1 - m2 = zipWith (-) m1 m2
         m1 * m2 = zipWith (*) m1 m2
-        negate = map negate
-        abs = map abs
+        negate = C.map negate
+        abs = C.map abs
         signum = undefined
         fromInteger = undefined
 
 instance (SingI r, SingI c, G.Vector v a, Fractional a) =>
     Fractional (Matrix r c v a) where
         m1 / m2 = zipWith (/) m1 m2
-        recip = map recip
+        recip = C.map recip
         fromRational = undefined
 
 instance NFData (v a) => NFData (Matrix r c v a) where
@@ -209,6 +177,26 @@ instance G.Vector v a => C.Matrix Matrix v a where
     unsafeFreeze (MMatrix v) = Matrix <$> G.unsafeFreeze v
     {-# INLINE unsafeFreeze #-}
 
+    map f (Matrix vec) = Matrix $ G.map f vec
+    {-# INLINE map #-}
+
+    imap f m@(Matrix vec) = Matrix $ G.imap g vec
+      where
+        g i = f (toIndex (C.rows m) i)
+    {-# INLINE imap #-}
+
+    imapM_ f m@(Matrix vec) = G.imapM_ g vec
+      where
+        g i = f (toIndex (C.rows m) i)
+    {-# INLINE imapM_ #-}
+
+    sequence (Matrix vec) = Matrix <$> G.sequence vec
+    {-# INLINE sequence #-}
+
+    sequence_ (Matrix vec) = G.sequence_ vec
+    {-# INLINE sequence_ #-}
+
+
 --reshape :: G.Vector v a => Matrix v a -> (Int, Int) -> Matrix v a
 
 -- | O(m*n) Create matrix from rows
@@ -231,131 +219,30 @@ transpose mat@(Matrix vec) = C.unsafeFromVector $ G.generate (r*c) f
 {-# INLINE transpose #-}
 
 {-
--- | O(1) Extract sub matrix
-subMatrix :: G.Vector v a
-          => (Int, Int)  -- ^ upper left corner of the submatrix
-          -> (Int, Int)  -- ^ bottom right corner of the submatrix
-          -> Matrix v a -> Matrix v a
-subMatrix (i,j) (i',j') (Matrix _ _ tda offset vec)
-    | m' <= 0 || n' <= 0 = C.empty
-    | otherwise = Matrix m' n' tda offset' vec
-  where
-    m' = i' - i + 1
-    n' = j' - j + 1
-    offset' = offset + i * tda + j
-{-# INLINE subMatrix #-}
-
-
 -- | O(m*n) Create an identity matrix
-ident :: (Num a, G.Vector v a) => Int -> Matrix v a
-ident n = diagRect 0 (n,n) $ replicate n 1
+ident :: (Num a, G.Vector v a)
+      => Matrix n n v a
+ident = diagRect 0 $ replicate 1
 {-# INLINE ident #-}
+-}
 
 -- | O(m*n) Create a square matrix with given diagonal, other entries default to 0
-diag :: (Num a, G.Vector v a, F.Foldable t)
-     => t a  -- ^ diagonal
-     -> Matrix v a
-diag d = diagRect 0 (n,n) d
-  where n = length . F.toList $ d
+diag :: (Num a, G.Vector v a, SingI n)
+     => Matrix n 1 v a       -- ^ diagonal
+     -> Matrix n n v a
+diag = diagRect 0
 {-# INLINE diag #-}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
-diagRect :: (G.Vector v a, F.Foldable t, SingI r, SingI c)
-         => a         -- ^ default value
-         -> t a       -- ^ diagonal
+diagRect :: (G.Vector v a, SingI r, SingI c, n <= r, n <= c)
+         => a                    -- ^ default value
+         -> Matrix n 1 v a       -- ^ diagonal
          -> Matrix r c v a
-diagRect z0 (r,c) d = fromVector (r,c) $ G.create $ GM.replicate n z0 >>= go d c
-  where
-    go xs c' v = F.foldlM f 0 xs >> return v
-      where
-        f !i x = GM.unsafeWrite v (i*(c'+1)) x >> return (i+1)
-    n = r * c
+diagRect z0 d = C.create $ do
+    mat <- DM.replicate z0
+    C.imapM_ (DM.unsafeWrite mat) d
+    return mat
 {-# INLINE diagRect #-}
-
-fromBlocks :: G.Vector v a
-           => a               -- ^ default value
-           -> [[Matrix v a]]
-           -> Matrix v a
-fromBlocks d ms = fromVector (m,n) $ G.create $ GM.replicate (m*n) d >>= go n ms
-  where
-    go n' xss v = foldM_ f 0 xss >> return v
-      where
-        f !cr xs = do (r', _) <- foldM g (0, 0) xs
-                      return $ cr + r'
-          where
-            g (!maxR, !cc) x = do
-                let (r,c) = C.dim x
-                    vec = C.flatten x
-                    step i u = do
-                        GM.unsafeWrite v ((cr + i `div` c) * n' + i `mod` c + cc) u
-                        return (i+1)
-                G.foldM'_ step (0::Int) vec
-                return (max maxR r, cc + c)
-    -- figure out the dimension of the new matrix
-    (m, n) = (sum *** maximum) . Prelude.unzip . Prelude.map ((maximum *** sum) .
-                Prelude.unzip . Prelude.map (C.rows &&& C.cols)) $ ms
-{-# INLINE fromBlocks #-}
-
-isSymmetric :: (Eq a, G.Vector v a) => Matrix v a -> Bool
-isSymmetric m@(Matrix r c _ _ _) | r /= c = False
-                                 | otherwise = all f [0 .. r-1]
-  where
-    f i = all g [i + 1 .. c-1]
-      where g j = m C.! (i,j) == m C.! (j,i)
-{-# INLINE isSymmetric #-}
--}
-
-map :: (G.Vector v a, G.Vector v b)
-    => (a -> b) -> Matrix r c v a -> Matrix r c v b
-map f (Matrix vec) = Matrix $ G.map f vec
-{-# INLINE map #-}
-
-imap :: (G.Vector v a, G.Vector v b)
-     => ((Int, Int) -> a -> b) -> Matrix r c v a -> Matrix r c v b
-imap f m@(Matrix vec) = Matrix $ G.imap f' vec
-  where
-    f' i = f (i `divMod` C.rows m)
-{-# INLINE imap #-}
-
-foldl :: G.Vector v b => (a -> b -> a) -> a -> Matrix r c v b -> a
-foldl f acc (Matrix vec) = G.foldl f acc vec
-{-# INLINE foldl #-}
-
-mapM :: (G.Vector v a, G.Vector v b, Monad m)
-     => (a -> m b) -> Matrix r c v a -> m (Matrix r c v b)
-mapM f (Matrix vec) = Matrix <$> G.mapM f vec
-{-# INLINE mapM #-}
-
--- | O(m*n) Apply the monadic action to every element and its index,
--- yielding a matrix of results.
-imapM :: (G.Vector v a, G.Vector v b, Monad m)
-      => ((Int, Int) -> a -> m b) -> Matrix r c v a -> m (Matrix r c v b)
-imapM f m@(Matrix vec) = Matrix <$> G.imapM f' vec
-  where
-    f' i = f (i `divMod` C.rows m)
-{-# INLINE imapM #-}
-
-mapM_ :: (G.Vector v a, Monad m) => (a -> m b) -> Matrix r c v a -> m ()
-mapM_ f = G.mapM_ f . C.flatten
-{-# INLINE mapM_ #-}
-
--- | O(m*n) Apply the monadic action to every element and its index,
--- ignoring the results.
-imapM_ :: (G.Vector v a, Monad m)
-       => ((Int, Int) -> a -> m b) -> Matrix r c v a -> m ()
-imapM_ f m@(Matrix vec) = G.imapM_ f' vec
-  where
-    f' i = f (i `divMod` C.rows m)
-{-# INLINE imapM_ #-}
-
-forM :: (G.Vector v a, G.Vector v b, Monad m)
-     => Matrix r c v a -> (a -> m b) -> m (Matrix r c v b)
-forM = flip mapM
-{-# INLINE forM #-}
-
-forM_ :: (G.Vector v a, Monad m) => Matrix r c v a -> (a -> m b) -> m ()
-forM_ = flip mapM_
-{-# INLINE forM_ #-}
 
 zipWith :: (G.Vector v a, G.Vector v b, G.Vector v c
            , SingI n, SingI m )
@@ -416,83 +303,26 @@ zipWith6 f m1 m2 m3 m4 m5 m6 = C.unsafeFromVector $
     (C.flatten m4) (C.flatten m5) $ C.flatten m6
 {-# INLINE zipWith6 #-}
 
-{-
-izipWith :: (G.Vector v a, G.Vector v b, G.Vector v c)
-         => ((Int, Int) -> a -> b -> c) -> Matrix v a -> Matrix v b -> Matrix v c
-izipWith f m1 m2
-    | C.dim m1 /= C.dim m2 = error "izipWith: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.izipWith f' (C.flatten m1) $ C.flatten m2
+izipWith :: ( G.Vector v a, G.Vector v b, G.Vector v c
+            , SingI n, SingI m )
+         => ((Int, Int) -> a -> b -> c)
+         -> Matrix n m v a -> Matrix n m v b -> Matrix n m v c
+izipWith f m1 m2 = C.unsafeFromVector $
+    G.izipWith g (C.flatten m1) $ C.flatten m2
   where
-    c = C.cols m1
-    f' i = f (i `divMod` c)
+    g i = f (toIndex (C.rows m1) i)
 {-# INLINE izipWith #-}
 
-izipWith3 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d)
-          => ((Int, Int) -> a -> b -> c -> d) -> Matrix v a -> Matrix v b
-          -> Matrix v c -> Matrix v d
-izipWith3 f m1 m2 m3
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 = error "izipWith3: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.izipWith3 f' (C.flatten m1) (C.flatten m2) $ C.flatten m3
+izipWith3 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
+             , SingI n, SingI m )
+          => ((Int, Int) -> a -> b -> c -> d)
+          -> Matrix n m v a -> Matrix n m v b -> Matrix n m v c
+          -> Matrix n m v d
+izipWith3 f m1 m2 m3 = C.unsafeFromVector $ G.izipWith3 g
+    (C.flatten m1) (C.flatten m2) $ C.flatten m3
   where
-    c = C.cols m1
-    f' i = f (i `divMod` c)
+    g i = f (toIndex (C.rows m1) i)
 {-# INLINE izipWith3 #-}
-
-izipWith4 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d, G.Vector v e)
-          => ((Int, Int) -> a -> b -> c -> d -> e) -> Matrix v a -> Matrix v b
-          -> Matrix v c -> Matrix v d -> Matrix v e
-izipWith4 f m1 m2 m3 m4
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 ||
-      C.dim m3 /= C.dim m4 = error "izipWith4: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.izipWith4 f' (C.flatten m1) (C.flatten m2)
-                  (C.flatten m3) $ C.flatten m4
-  where
-    c = C.cols m1
-    f' i = f (i `divMod` c)
-{-# INLINE izipWith4 #-}
-
-izipWith5 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
-             , G.Vector v e, G.Vector v f )
-          => ((Int, Int) -> a -> b -> c -> d -> e -> f) -> Matrix v a
-          -> Matrix v b -> Matrix v c -> Matrix v d -> Matrix v e -> Matrix v f
-izipWith5 f m1 m2 m3 m4 m5
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 ||
-      C.dim m3 /= C.dim m4 ||
-      C.dim m4 /= C.dim m5 = error "izipWith5: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.izipWith5 f' (C.flatten m1) (C.flatten m2)
-                  (C.flatten m3) (C.flatten m4) $ C.flatten m5
-  where
-    c = C.cols m1
-    f' i = f (i `divMod` c)
-{-# INLINE izipWith5 #-}
-
-izipWith6 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
-             , G.Vector v e, G.Vector v f, G.Vector v g )
-          => ((Int, Int) -> a -> b -> c -> d -> e -> f -> g) -> Matrix v a
-          -> Matrix v b -> Matrix v c -> Matrix v d -> Matrix v e -> Matrix v f
-          -> Matrix v g
-izipWith6 f m1 m2 m3 m4 m5 m6
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 ||
-      C.dim m3 /= C.dim m4 ||
-      C.dim m4 /= C.dim m5 ||
-      C.dim m5 /= C.dim m6 = error "izipWith6: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.izipWith6 f' (C.flatten m1) (C.flatten m2) (C.flatten m3)
-                  (C.flatten m4) (C.flatten m5) $ C.flatten m6
-  where
-    c = C.cols m1
-    f' i = f (i `divMod` c)
-{-# INLINE izipWith6 #-}
--}
-
 
 zip :: (SingI n, SingI m, G.Vector v a, G.Vector v b, G.Vector v (a,b))
     => Matrix n m v a -> Matrix n m v b -> Matrix n m v (a,b)
@@ -508,131 +338,36 @@ zip3 m1 m2 m3 = C.unsafeFromVector $
     G.zip3 (C.flatten m1) (C.flatten m2) $ C.flatten m3
 {-# INLINE zip3 #-}
 
-{-
-zip4 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d, G.Vector v (a,b,c,d))
-     => Matrix v a -> Matrix v b -> Matrix v c -> Matrix v d -> Matrix v (a,b,c,d)
-zip4 m1 m2 m3 m4
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 ||
-      C.dim m3 /= C.dim m4 = error "zip4: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.zip4 (C.flatten m1) (C.flatten m2)
-                  (C.flatten m3) $ C.flatten m4
-{-# INLINE zip4 #-}
-
-zip5 :: ( G.Vector v a, G.Vector v b, G.Vector v c
-        , G.Vector v d, G.Vector v e, G.Vector v (a,b,c,d,e) )
-     => Matrix v a -> Matrix v b -> Matrix v c -> Matrix v d -> Matrix v e
-     -> Matrix v (a,b,c,d,e)
-zip5 m1 m2 m3 m4 m5
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 ||
-      C.dim m3 /= C.dim m4 ||
-      C.dim m4 /= C.dim m5 = error "zip5: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.zip5 (C.flatten m1) (C.flatten m2)
-                  (C.flatten m3) (C.flatten m4) $ C.flatten m5
-{-# INLINE zip5 #-}
-
-zip6 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d, G.Vector v e
-        , G.Vector v f, G.Vector v (a,b,c,d,e,f) )
-     => Matrix v a -> Matrix v b -> Matrix v c -> Matrix v d -> Matrix v e
-     -> Matrix v f -> Matrix v (a,b,c,d,e,f)
-zip6 m1 m2 m3 m4 m5 m6
-    | C.dim m1 /= C.dim m2 ||
-      C.dim m2 /= C.dim m3 ||
-      C.dim m3 /= C.dim m4 ||
-      C.dim m4 /= C.dim m5 ||
-      C.dim m5 /= C.dim m6 = error "zip6: Dimensions don't match."
-    | otherwise = C.unsafeFromVector (C.dim m1) $
-                  G.zip6 (C.flatten m1) (C.flatten m2) (C.flatten m3)
-                  (C.flatten m4) (C.flatten m5) $ C.flatten m6
-{-# INLINE zip6 #-}
-
-zipWithM :: (Monad m, G.Vector v a, G.Vector v b, G.Vector v c)
-         => (a -> b -> m c) -> Matrix v a -> Matrix v b -> m (Matrix v c)
-zipWithM f m1 m2
-    | C.dim m1 /= C.dim m2 = error "zipWithM: Dimensions don't match."
-    | otherwise = liftM (C.unsafeFromVector $ C.dim m1) $
-                  G.zipWithM f (C.flatten m1) $ C.flatten m2
+zipWithM :: ( G.Vector v a, G.Vector v b, G.Vector v c
+            , Monad monad, SingI n, SingI m )
+         => (a -> b -> monad c)
+         -> Matrix n m v a -> Matrix n m v b -> monad (Matrix n m v c)
+zipWithM f m1 m2 = liftM C.unsafeFromVector $
+    G.zipWithM f (C.flatten m1) $ C.flatten m2
 {-# INLINE zipWithM #-}
 
-zipWithM_ :: (Monad m, G.Vector v a, G.Vector v b)
-          => (a -> b -> m c) -> Matrix v a -> Matrix v b -> m ()
-zipWithM_ f m1 m2
-    | C.dim m1 /= C.dim m2 = error "zipWithM_: Dimensions don't match."
-    | otherwise = G.zipWithM_ f (C.flatten m1) $ C.flatten m2
+zipWithM_ :: (G.Vector v a, G.Vector v b, G.Vector v c, Monad monad)
+          => (a -> b -> monad c)
+          -> Matrix n m v a -> Matrix n m v b -> monad ()
+zipWithM_ f m1 m2 = G.zipWithM_ f (C.flatten m1) $ C.flatten m2
 {-# INLINE zipWithM_ #-}
 
-unzip :: (G.Vector v a, G.Vector v b, G.Vector v (a,b))
-      => Matrix v (a,b) -> (Matrix v a, Matrix v b )
-unzip m = (C.unsafeFromVector d v1, C.unsafeFromVector d v2)
+unzip :: ( G.Vector v a, G.Vector v b, G.Vector v (a,b)
+         , SingI n, SingI m )
+      => Matrix n m v (a,b) -> (Matrix n m v a, Matrix n m v b )
+unzip m = (C.unsafeFromVector v1, C.unsafeFromVector v2)
   where
-    d = C.dim m
     (v1, v2) = G.unzip $ C.flatten m
 {-# INLINE unzip #-}
 
-unzip3 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v (a,b,c))
-       => Matrix v (a,b, c) -> (Matrix v a, Matrix v b, Matrix v c)
-unzip3 m = (C.unsafeFromVector d v1, C.unsafeFromVector d v2, C.unsafeFromVector d v3)
+unzip3 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v (a,b,c)
+          , SingI n, SingI m )
+       => Matrix n m v (a, b, c)
+       -> (Matrix n m v a, Matrix n m v b, Matrix n m v c)
+unzip3 m = (C.unsafeFromVector v1, C.unsafeFromVector v2, C.unsafeFromVector v3)
   where
-    d = C.dim m
     (v1, v2, v3) = G.unzip3 $ C.flatten m
 {-# INLINE unzip3 #-}
-
-unzip4 :: (G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d, G.Vector v (a,b,c,d))
-       => Matrix v (a,b,c,d) -> (Matrix v a, Matrix v b, Matrix v c, Matrix v d)
-unzip4 m = ( C.unsafeFromVector d v1
-           , C.unsafeFromVector d v2
-           , C.unsafeFromVector d v3
-           , C.unsafeFromVector d v4
-           )
-  where
-    d = C.dim m
-    (v1, v2, v3, v4) = G.unzip4 $ C.flatten m
-{-# INLINE unzip4 #-}
-
-unzip5 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
-          , G.Vector v e, G.Vector v (a,b,c,d,e) )
-       => Matrix v (a,b,c,d,e)
-       -> (Matrix v a, Matrix v b, Matrix v c, Matrix v d, Matrix v e)
-unzip5 m = ( C.unsafeFromVector d v1
-           , C.unsafeFromVector d v2
-           , C.unsafeFromVector d v3
-           , C.unsafeFromVector d v4
-           , C.unsafeFromVector d v5
-           )
-  where
-    d = C.dim m
-    (v1, v2, v3, v4, v5) = G.unzip5 $ C.flatten m
-{-# INLINE unzip5 #-}
-
-unzip6 :: ( G.Vector v a, G.Vector v b, G.Vector v c, G.Vector v d
-          , G.Vector v e, G.Vector v f, G.Vector v (a,b,c,d,e,f) )
-       => Matrix v (a,b,c,d,e,f)
-       -> (Matrix v a, Matrix v b, Matrix v c, Matrix v d, Matrix v e, Matrix v f)
-unzip6 m = ( C.unsafeFromVector d v1
-           , C.unsafeFromVector d v2
-           , C.unsafeFromVector d v3
-           , C.unsafeFromVector d v4
-           , C.unsafeFromVector d v5
-           , C.unsafeFromVector d v6
-           )
-  where
-    d = C.dim m
-    (v1, v2, v3, v4, v5, v6) = G.unzip6 $ C.flatten m
-{-# INLINE unzip6 #-}
--}
-
-sequence :: (G.Vector v a, G.Vector v (m a), Monad m)
-         => Matrix r c v (m a) -> m (Matrix r c v a)
-sequence (Matrix vec) = Matrix <$> G.sequence vec
-{-# INLINE sequence #-}
-
-sequence_ :: (G.Vector v (m a), Monad m)
-          => Matrix r c v (m a) -> m ()
-sequence_ (Matrix vec) = G.sequence_ vec
-{-# INLINE sequence_ #-}
 
 generate :: forall r c v a. (G.Vector v a, SingI r, SingI c)
          => ((Int, Int) -> a) -> Matrix r c v a
@@ -646,3 +381,9 @@ generate f = C.unsafeFromVector . G.generate (r*c) $ \i -> f (i `divMod` r)
 convert :: (G.Vector v a, G.Vector w a) => Matrix r c v a -> Matrix r c w a
 convert (Matrix vec) = Matrix $ G.convert vec
 {-# INLINE convert #-}
+
+
+-- Helper
+toIndex :: Int -> Int -> (Int, Int)
+toIndex r i = swap $ i `divMod` r
+{-# INLINE toIndex #-}

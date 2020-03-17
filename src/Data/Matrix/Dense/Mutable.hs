@@ -10,16 +10,11 @@
 module Data.Matrix.Dense.Mutable
    ( -- * Mutable Matrix
      MMatrix(..)
-     {-
    , C.dim
-   , takeRow
-   , C.write
    , C.unsafeWrite
-   , C.read
    , C.unsafeRead
    , C.new
    , C.replicate
-   -}
    ) where
 
 import           Control.DeepSeq

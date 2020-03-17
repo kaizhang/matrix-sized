@@ -43,7 +43,6 @@ library:
     - Data.Matrix.Sparse.Mutable
     - Data.Matrix.LinearAlgebra
     - Data.Matrix.LinearAlgebra.Types
-    - Data.Matrix.LinearAlgebra.EigenSolver
 
   other-modules: 
     - Data.Matrix.Internal.Class
