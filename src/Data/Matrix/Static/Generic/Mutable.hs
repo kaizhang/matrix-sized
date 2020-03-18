@@ -2,7 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Data.Matrix.Class.Mutable
+module Data.Matrix.Static.Generic.Mutable
     ( MMatrix(..)
     , MMatrixKind
     ) where

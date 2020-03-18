@@ -7,44 +7,39 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Data.Matrix.Sparse.Mutable
-   ( -- * Mutable sparse matrix
-     MSparseMatrix(..)
+module Data.Matrix.Static.Dense.Mutable
+   ( -- * Mutable Matrix
+     MMatrix(..)
+   , C.dim
+   , C.unsafeWrite
+   , C.unsafeRead
+   , C.new
+   , C.replicate
    ) where
 
 import           Control.DeepSeq
 import qualified Data.Vector.Generic.Mutable as GM
-import qualified Data.Vector.Storable as S
 import           Prelude                     hiding (read, replicate)
 import Data.Singletons
 import Control.Monad.Primitive     (PrimMonad, PrimState)
 
-import qualified Data.Matrix.Class.Mutable as C
+import qualified Data.Matrix.Static.Generic.Mutable as C
 
 -- | Column-major mutable matrix.
-data MSparseMatrix :: C.MMatrixKind where
-    MSparseMatrix :: (SingI r, SingI c)
-                  => !(v s a)         -- ^ Values: stores the coefficient values
-                                      -- of the non-zeros.
-                  -> !(S.Vector Int)  -- ^ InnerIndices: stores the row
-                                      -- (resp. column) indices of the non-zeros.
-                  -> !(S.Vector Int)  -- ^ OuterStarts: stores for each column
-                                      -- (resp. row) the index of the first
-                                      -- non-zero in the previous two arrays.
-                  -> MSparseMatrix r c v s a
+data MMatrix :: C.MMatrixKind where
+    MMatrix :: (SingI r, SingI c) => v s a -> MMatrix r c v s a
 
-instance (NFData (v s a)) => NFData (MSparseMatrix r c v s a) where
-    rnf (MSparseMatrix vec inner outer) = rnf vec
+instance (NFData (v s a)) => NFData (MMatrix r c v s a) where
+    rnf (MMatrix vec) = rnf vec
 
-instance GM.MVector v a => C.MMatrix MSparseMatrix v a where
-    dim :: forall r c s. MSparseMatrix r c v s a -> (Int, Int)
-    dim (MSparseMatrix _ _ _) = (r,c)
+instance GM.MVector v a => C.MMatrix MMatrix v a where
+    dim :: forall r c s. MMatrix r c v s a -> (Int, Int)
+    dim (MMatrix _) = (r,c)
       where
         r = fromIntegral $ fromSing (sing :: Sing r)
         c = fromIntegral $ fromSing (sing :: Sing c)
     {-# INLINE dim #-}
 
-{-
     unsafeRead mat@(MMatrix v) (i,j) = GM.unsafeRead v idx
       where
         (r, _) = C.dim mat
@@ -72,4 +67,11 @@ instance GM.MVector v a => C.MMatrix MSparseMatrix v a where
         r = fromIntegral $ fromSing (sing :: Sing r)
         c = fromIntegral $ fromSing (sing :: Sing c)
     {-# INLINE replicate #-}
-    -}
+
+{-
+takeColumn :: GM.MVector v a => MMatrix v m a -> Int -> v m a
+takeColumn (MMatrix _ c tda offset vec) i = GM.slice i' c vec
+  where
+    i' = offset + i * tda
+{-# INLINE takeColumn #-}
+-}

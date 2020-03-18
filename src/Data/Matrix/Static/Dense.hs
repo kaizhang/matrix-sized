@@ -10,7 +10,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators #-}
-module Data.Matrix.Dense
+module Data.Matrix.Static.Dense
     (
     -- * Immutable Matrix
       Matrix(..)
@@ -56,7 +56,9 @@ module Data.Matrix.Dense
 
     , C.transpose
 
+    , C.map
     , C.mapM
+    , C.imap
     , C.imapM
 
     -- * Zipping
@@ -98,9 +100,9 @@ import Data.Tuple (swap)
 import qualified Data.List as L
 import Text.Printf (printf)
 
-import           Data.Matrix.Dense.Mutable (MMatrix (..))
-import qualified Data.Matrix.Dense.Mutable as DM
-import qualified Data.Matrix.Class as C
+import           Data.Matrix.Static.Dense.Mutable (MMatrix (..))
+import qualified Data.Matrix.Static.Dense.Mutable as DM
+import qualified Data.Matrix.Static.Generic as C
 
 type instance C.Mutable Matrix = MMatrix
 

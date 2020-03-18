@@ -10,7 +10,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
-module Data.Matrix.Sparse
+module Data.Matrix.Static.Sparse
    ( -- * Sparse matrix
      SparseMatrix(..)
 
@@ -60,9 +60,9 @@ import GHC.TypeLits (type (<=))
 import Foreign.C.Types
 import Data.Complex
 
-import qualified Data.Matrix.Dense as D
-import qualified Data.Matrix.Class as C
-import Data.Matrix.Sparse.Mutable
+import qualified Data.Matrix.Static.Dense as D
+import qualified Data.Matrix.Static.Generic as C
+import Data.Matrix.Static.Sparse.Mutable
 
 type instance C.Mutable SparseMatrix = MSparseMatrix
 

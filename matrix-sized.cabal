@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8c06e934611116047c438fcfb6e6cf8f117143620c35b5ab55d57f3194cbb777
+-- hash: b66f2a6cbe6f290d36d10d86fae15cde69b9db79b9ed88766553e77eb0eca496
 
 name:           matrix-sized
-version:        0.0.1
+version:        0.0.2
 synopsis:       Haskell matrix library with interface to C++ linear algebra libraries.
 description:    A Haskell implementation of matrices with statically known sizes. The library also comes with the bindings to high performance C++ linear algebra libraries such as Eigen and Spectra.
 category:       Math
@@ -377,16 +377,16 @@ source-repository head
 
 library
   exposed-modules:
-      Data.Matrix.Dense
-      Data.Matrix.Dense.Mutable
-      Data.Matrix.Sparse
-      Data.Matrix.Sparse.Mutable
-      Data.Matrix.LinearAlgebra
-      Data.Matrix.LinearAlgebra.Types
-      Data.Matrix.Class
-      Data.Matrix.Class.Mutable
+      Data.Matrix.Static.Dense
+      Data.Matrix.Static.Dense.Mutable
+      Data.Matrix.Static.Sparse
+      Data.Matrix.Static.Sparse.Mutable
+      Data.Matrix.Static.LinearAlgebra
+      Data.Matrix.Static.LinearAlgebra.Types
+      Data.Matrix.Static.Generic
+      Data.Matrix.Static.Generic.Mutable
   other-modules:
-      Data.Matrix.Internal
+      Data.Matrix.Static.Internal
   hs-source-dirs:
       src
   ghc-options: -Wall

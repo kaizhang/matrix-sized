@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
-module Data.Matrix.LinearAlgebra.Types
+module Data.Matrix.Static.LinearAlgebra.Types
     ( Numeric(..)
     , Matrix
     , MMatrix
@@ -30,11 +30,11 @@ import Foreign
 import Foreign.C.Types
 import Foreign.C.String
 
-import qualified Data.Matrix.Dense as D
-import qualified Data.Matrix.Dense.Mutable as DM
-import qualified Data.Matrix.Sparse as S
-import qualified Data.Matrix.Class.Mutable as CM
-import qualified Data.Matrix.Class as C
+import qualified Data.Matrix.Static.Dense as D
+import qualified Data.Matrix.Static.Dense.Mutable as DM
+import qualified Data.Matrix.Static.Sparse as S
+import qualified Data.Matrix.Static.Generic.Mutable as CM
+import qualified Data.Matrix.Static.Generic as C
 
 class (S.Zero a, Storable a) => Numeric a where
     foreignType :: a -> CInt

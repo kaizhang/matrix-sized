@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators #-}
-module Data.Matrix.Class
+module Data.Matrix.Static.Generic
     ( Mutable
     , Matrix(..)
     , MatrixKind
@@ -46,7 +46,7 @@ import GHC.TypeLits (Nat, type (<=))
 import Data.Singletons (SingI, Sing, fromSing, sing, withSomeSing)
 import Data.Singletons.TypeLits
 
-import Data.Matrix.Class.Mutable (MMatrix, MMatrixKind)
+import Data.Matrix.Static.Generic.Mutable (MMatrix, MMatrixKind)
 
 type MatrixKind = Nat -> Nat -> (Type -> Type) -> Type -> Type
 

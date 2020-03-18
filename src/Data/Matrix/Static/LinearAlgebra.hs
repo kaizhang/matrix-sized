@@ -8,11 +8,11 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE TypeOperators #-}
-module Data.Matrix.LinearAlgebra
+module Data.Matrix.Static.LinearAlgebra
     ( Arithmetic(..)
     , Factorization(..)
     , inverse
-    , module Data.Matrix.LinearAlgebra.Types
+    , module Data.Matrix.Static.LinearAlgebra.Types
     ) where
 
 import qualified Data.Vector.Storable as VS
@@ -21,13 +21,12 @@ import Data.Complex (Complex)
 import Data.Singletons
 import GHC.TypeLits (type (<=), type (-))
 
-import qualified Data.Matrix.Dense as D
-import qualified Data.Matrix.Sparse as S
-import qualified Data.Matrix.Class.Mutable as CM
-import qualified Data.Matrix.Class as C
-import qualified Data.Matrix.Internal as Internal
-
-import Data.Matrix.LinearAlgebra.Types
+import qualified Data.Matrix.Static.Dense as D
+import qualified Data.Matrix.Static.Sparse as S
+import qualified Data.Matrix.Static.Generic.Mutable as CM
+import qualified Data.Matrix.Static.Generic as C
+import qualified Data.Matrix.Static.Internal as Internal
+import Data.Matrix.Static.LinearAlgebra.Types
 
 class Arithmetic (mat1 :: C.MatrixKind)
                  (mat2 :: C.MatrixKind)

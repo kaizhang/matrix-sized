@@ -1,5 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Data.Matrix.Internal
+module Data.Matrix.Static.Internal
     ( c_dd_mul
     , c_ds_mul
     , c_sd_mul

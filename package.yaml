@@ -42,17 +42,17 @@ library:
   source-dirs:
     - src
   exposed-modules:
-    - Data.Matrix.Dense
-    - Data.Matrix.Dense.Mutable
-    - Data.Matrix.Sparse
-    - Data.Matrix.Sparse.Mutable
-    - Data.Matrix.LinearAlgebra
-    - Data.Matrix.LinearAlgebra.Types
-    - Data.Matrix.Class
-    - Data.Matrix.Class.Mutable
+    - Data.Matrix.Static.Dense
+    - Data.Matrix.Static.Dense.Mutable
+    - Data.Matrix.Static.Sparse
+    - Data.Matrix.Static.Sparse.Mutable
+    - Data.Matrix.Static.LinearAlgebra
+    - Data.Matrix.Static.LinearAlgebra.Types
+    - Data.Matrix.Static.Generic
+    - Data.Matrix.Static.Generic.Mutable
 
   other-modules: 
-    - Data.Matrix.Internal
+    - Data.Matrix.Static.Internal
 
   include-dirs:
     - eigen3
