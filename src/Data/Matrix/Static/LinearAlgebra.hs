@@ -48,7 +48,7 @@ instance Arithmetic S.SparseMatrix D.Matrix D.Matrix where
     (%*%) = withSD Internal.c_sd_mul
 
 instance Arithmetic S.SparseMatrix S.SparseMatrix S.SparseMatrix where
-    (%*%) = undefined
+    (%*%) = withSS Internal.c_ss_mul
 
 inverse :: (SingI n, Numeric a) => Matrix n n a -> Matrix n n a
 inverse = withFun1 Internal.c_inverse

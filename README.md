@@ -6,3 +6,10 @@ Type-safe linear algebra library
 - The dimensions of matrices are statically typed.
 
 - Provides bindings to high performance C++ linear algebra libraries such Eigen and Spectra.
+
+Following GHC extensions may be needed:
+
+- ScopedTypeVariables
+- RankNTypes
+- TypeFamilies
+- DataKinds

@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 {-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 module Data.Matrix.Static.LinearAlgebra.Types
@@ -12,6 +13,7 @@ module Data.Matrix.Static.LinearAlgebra.Types
     , withFun2
     , withDS
     , withSD
+    , withSS
     , unsafeWith
     , unsafeWith'
     , unsafeWithS
@@ -124,29 +126,43 @@ withSD f m2 m1 = unsafePerformIO $ do
     C.unsafeFreeze m0
 {-# INLINE withSD #-}
 
-{-
+mkSparseMatrix :: forall r c a. (Storable a, SingI r, SingI c)
+    => (Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr (Ptr CInt) -> IO Int)
+    -> IO (SparseMatrix r c a)
+mkSparseMatrix f = alloca $ \ppv -> alloca $ \ppi -> alloca $ \ppo -> do
+    n <- f ppv ppi ppo
+    pv <- peek ppv >>= newForeignPtr finalizerFree
+    pinner <- peek ppi >>= newForeignPtr finalizerFree
+    pouter <- peek ppo >>= newForeignPtr finalizerFree
+    return $ S.SparseMatrix (VS.unsafeFromForeignPtr0 pv n)
+        (VS.unsafeFromForeignPtr0 pinner n)
+        (VS.unsafeFromForeignPtr0 pouter $ c + 1)
+  where
+    c = fromIntegral $ fromSing (sing :: Sing c)
+{-# INLINE mkSparseMatrix #-}
+
 withSS :: forall r1 c1 r2 c2 r3 c3 a.
             (SingI r3, SingI c3, Numeric a)
        => ( CInt
-         -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+         -> Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
          -> IO CString )
        -> SparseMatrix r1 c1 a
        -> SparseMatrix r2 c2 a
        -> SparseMatrix r3 c3 a
-withSS f m2 m1 = unsafePerformIO $ do
-    m0 <- CM.new
-    _ <- unsafeWith' m0 $ \v0 r0 c0 ->
-        unsafeWith m1 $ \v1 r1 c1 ->
-            unsafeWithS m2 $ \v2 inner outer r2 c2 s ->
-                f (foreignType (undefined :: a))
-                    v0 r0 c0
-                    v2 outer inner r2 c2 s
-                    v1 r1 c1
-    C.unsafeFreeze m0
+withSS f m1 m2 = unsafePerformIO $ mkSparseMatrix $ \v0 inner0 outer0 ->
+    alloca $ \pn -> unsafeWithS m1 $ \v1 inner1 outer1 r1 c1 s1 ->
+        unsafeWithS m2 $ \v2 inner2 outer2 r2 c2 s2 -> do
+            checkResult $ f (foreignType (undefined :: a))
+                v0 outer0 inner0 r c pn
+                v1 outer1 inner1 r1 c1 s1
+                v2 outer2 inner2 r2 c2 s2
+            fromIntegral <$> peek pn
+  where
+    r = fromIntegral $ fromSing (sing :: Sing r3)
+    c = fromIntegral $ fromSing (sing :: Sing c3)
 {-# INLINE withSS #-}
--}
 
 checkResult :: IO CString -> IO ()
 checkResult func = func >>= \c_str -> when (c_str /= nullPtr) $

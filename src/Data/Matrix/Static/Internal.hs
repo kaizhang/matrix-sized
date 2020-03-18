@@ -3,6 +3,7 @@ module Data.Matrix.Static.Internal
     ( c_dd_mul
     , c_ds_mul
     , c_sd_mul
+    , c_ss_mul
     , c_inverse
     , c_cholesky
     , c_eigs
@@ -36,6 +37,13 @@ foreign import ccall "eigen_sd_mul"
           -> Ptr a -> CInt -> CInt
           -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
           -> Ptr a -> CInt -> CInt
+          -> IO CString
+
+foreign import ccall "eigen_ss_mul"
+    c_ss_mul :: CInt
+          -> Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
           -> IO CString
 
              
