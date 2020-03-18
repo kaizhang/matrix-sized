@@ -61,7 +61,7 @@ import Foreign.C.Types
 import Data.Complex
 
 import qualified Data.Matrix.Dense as D
-import qualified Data.Matrix.Internal.Class as C
+import qualified Data.Matrix.Class as C
 import Data.Matrix.Sparse.Mutable
 
 type instance C.Mutable SparseMatrix = MSparseMatrix

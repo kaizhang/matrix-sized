@@ -1,5 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Data.Matrix.Internal.LinearAlgebra
+module Data.Matrix.Internal
     ( c_dd_mul
     , c_ds_mul
     , c_sd_mul

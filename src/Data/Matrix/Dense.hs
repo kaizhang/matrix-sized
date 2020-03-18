@@ -37,8 +37,8 @@ module Data.Matrix.Dense
     , C.matrix
     , C.fromVector
     , C.fromList
-    , fromRows
-    , fromColumns
+    , C.fromRows
+    , C.fromColumns
     , C.unsafeFromVector
 
     , diag
@@ -54,7 +54,7 @@ module Data.Matrix.Dense
     , convert
     , C.convertAny
 
-    , transpose
+    , C.transpose
 
     , C.mapM
     , C.imapM
@@ -100,7 +100,7 @@ import Text.Printf (printf)
 
 import           Data.Matrix.Dense.Mutable (MMatrix (..))
 import qualified Data.Matrix.Dense.Mutable as DM
-import qualified Data.Matrix.Internal.Class as C
+import qualified Data.Matrix.Class as C
 
 type instance C.Mutable Matrix = MMatrix
 
@@ -195,28 +195,6 @@ instance G.Vector v a => C.Matrix Matrix v a where
 
     sequence_ (Matrix vec) = G.sequence_ vec
     {-# INLINE sequence_ #-}
-
-
---reshape :: G.Vector v a => Matrix v a -> (Int, Int) -> Matrix v a
-
--- | O(m*n) Create matrix from rows
-fromRows :: (G.Vector v a, SingI r, SingI c) => [v a] -> Matrix r c v a
-fromRows = transpose . C.unsafeFromVector . G.concat
-{-# INLINE fromRows #-}
-
--- | O(m*n) Create matrix from columns
-fromColumns :: (G.Vector v a, SingI r, SingI c)
-            => [v a] -> Matrix r c v a
-fromColumns = C.fromVector . G.concat
-{-# INLINE fromColumns #-}
-
--- | O(m*n) Matrix transpose
-transpose :: G.Vector v a => Matrix m n v a -> Matrix n m v a
-transpose mat@(Matrix vec) = C.unsafeFromVector $ G.generate (r*c) f
-  where
-    (r, c) = C.dim mat
-    f i = vec G.! (i `mod` c * r + i `div` c)
-{-# INLINE transpose #-}
 
 {-
 -- | O(m*n) Create an identity matrix

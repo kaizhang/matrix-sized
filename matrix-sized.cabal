@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 32a85fe252d7c7ac4e14b5bdda92aa2b5b67b902bee14e17f98b64df94f58492
+-- hash: 8c06e934611116047c438fcfb6e6cf8f117143620c35b5ab55d57f3194cbb777
 
 name:           matrix-sized
 version:        0.0.1
@@ -383,10 +383,10 @@ library
       Data.Matrix.Sparse.Mutable
       Data.Matrix.LinearAlgebra
       Data.Matrix.LinearAlgebra.Types
+      Data.Matrix.Class
+      Data.Matrix.Class.Mutable
   other-modules:
-      Data.Matrix.Internal.Class
-      Data.Matrix.Internal.Class.Mutable
-      Data.Matrix.Internal.LinearAlgebra
+      Data.Matrix.Internal
   hs-source-dirs:
       src
   ghc-options: -Wall

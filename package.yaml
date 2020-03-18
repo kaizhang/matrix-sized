@@ -48,11 +48,11 @@ library:
     - Data.Matrix.Sparse.Mutable
     - Data.Matrix.LinearAlgebra
     - Data.Matrix.LinearAlgebra.Types
+    - Data.Matrix.Class
+    - Data.Matrix.Class.Mutable
 
   other-modules: 
-    - Data.Matrix.Internal.Class
-    - Data.Matrix.Internal.Class.Mutable
-    - Data.Matrix.Internal.LinearAlgebra
+    - Data.Matrix.Internal
 
   include-dirs:
     - eigen3

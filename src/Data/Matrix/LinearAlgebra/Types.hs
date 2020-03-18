@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DataKinds #-}
+{-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 module Data.Matrix.LinearAlgebra.Types
     ( Numeric(..)
     , Matrix
@@ -28,14 +29,12 @@ import Data.Singletons
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
-import Data.Int
 
 import qualified Data.Matrix.Dense as D
 import qualified Data.Matrix.Dense.Mutable as DM
 import qualified Data.Matrix.Sparse as S
-import qualified Data.Matrix.Internal.Class.Mutable as CM
-import qualified Data.Matrix.Internal.Class as C
-import qualified Data.Matrix.Internal.LinearAlgebra as Internal
+import qualified Data.Matrix.Class.Mutable as CM
+import qualified Data.Matrix.Class as C
 
 class (S.Zero a, Storable a) => Numeric a where
     foreignType :: a -> CInt

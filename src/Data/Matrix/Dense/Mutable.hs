@@ -23,7 +23,7 @@ import           Prelude                     hiding (read, replicate)
 import Data.Singletons
 import Control.Monad.Primitive     (PrimMonad, PrimState)
 
-import qualified Data.Matrix.Internal.Class.Mutable as C
+import qualified Data.Matrix.Class.Mutable as C
 
 -- | Column-major mutable matrix.
 data MMatrix :: C.MMatrixKind where

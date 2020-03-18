@@ -2,7 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Data.Matrix.Internal.Class.Mutable
+module Data.Matrix.Class.Mutable
     ( MMatrix(..)
     , MMatrixKind
     ) where
