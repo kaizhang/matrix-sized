@@ -66,6 +66,8 @@ library:
   - condition: flag(parallel)
     ld-options:
     - -fopenmp
+    cc-options:
+    - -fopenmp
     cxx-options:
     - -fopenmp
     - -std=c++11

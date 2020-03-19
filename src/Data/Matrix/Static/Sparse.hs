@@ -106,6 +106,22 @@ instance (G.Vector v a, Zero a, Show a) => Show (SparseMatrix r c v a) where
         (r,c) = C.dim mat
         vals = unlines $ map (unwords . map show . G.toList) $ C.toRows mat
 
+instance (SingI r, SingI c, G.Vector v a, Zero a, Num a) =>
+    Num (SparseMatrix r c v a) where
+        m1 + m2 = undefined
+        m1 - m2 = undefined
+        m1 * m2 = undefined
+        negate = C.map negate
+        abs = C.map abs
+        signum = undefined
+        fromInteger = undefined
+
+instance (SingI r, SingI c, G.Vector v a, Zero a, Fractional a) =>
+    Fractional (SparseMatrix r c v a) where
+        m1 / m2 = undefined
+        recip = C.map recip
+        fromRational = undefined
+
 instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     -- | O(1) Return the size of matrix.
     dim :: forall r c. SparseMatrix r c v a -> (Int, Int)
@@ -147,6 +163,8 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
         r = fromIntegral $ fromSing (sing :: Sing r)
         c = fromIntegral $ fromSing (sing :: Sing c)
     {-# INLINE unsafeFromVector #-}
+
+    transpose (SparseMatrix val inner outer) = undefined 
 
     thaw = undefined
     {-# INLINE thaw #-}

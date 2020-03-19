@@ -11,7 +11,6 @@
 module Data.Matrix.Static.LinearAlgebra
     ( Arithmetic(..)
     , Factorization(..)
-    , inverse
     , module Data.Matrix.Static.LinearAlgebra.Types
     ) where
 
@@ -20,6 +19,8 @@ import System.IO.Unsafe (unsafePerformIO)
 import Data.Complex (Complex)
 import Data.Singletons
 import GHC.TypeLits (type (<=), type (-))
+import Data.Type.Bool (If)
+import Data.Type.Equality (type (==))
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Sparse as S
@@ -28,32 +29,65 @@ import qualified Data.Matrix.Static.Generic as C
 import qualified Data.Matrix.Static.Internal as Internal
 import Data.Matrix.Static.LinearAlgebra.Types
 
-class Arithmetic (mat1 :: C.MatrixKind)
-                 (mat2 :: C.MatrixKind)
-                 (mat3 :: C.MatrixKind) |
-                 mat1 mat2 -> mat3 where
-    (%*%) :: (Numeric a, SingI n, SingI m)
-          => mat1 n p VS.Vector a
-          -> mat2 p m VS.Vector a
+class Arithmetic (mat1 :: C.MatrixKind) (mat2 :: C.MatrixKind) where
+    -- | Matrix multiplication
+    (@@) :: ( Numeric a, SingI n, SingI m
+            , If (mat1 == mat2) mat1 D.Matrix ~ mat3 )
+         => mat1 n p VS.Vector a
+         -> mat2 p m VS.Vector a
+         -> mat3 n m VS.Vector a
+    infixr 8 @@
+
+    (%+%) :: ( Numeric a, SingI n, SingI m
+             , If (mat1 == mat2) mat1 D.Matrix ~ mat3 )
+          => mat1 n m VS.Vector a
+          -> mat2 n m VS.Vector a
+          -> mat3 n m VS.Vector a
+    infixr 8 %+%
+
+    (%-%) :: ( Numeric a, SingI n, SingI m
+             , If (mat1 == mat2) mat1 D.Matrix ~ mat3 )
+          => mat1 n m VS.Vector a
+          -> mat2 n m VS.Vector a
+          -> mat3 n m VS.Vector a
+    infixr 8 %-%
+
+    (%*%) :: ( Numeric a, SingI n, SingI m
+             , If (mat1 == mat2) mat1 S.SparseMatrix ~ mat3 )
+          => mat1 n m VS.Vector a
+          -> mat2 n m VS.Vector a
           -> mat3 n m VS.Vector a
     infixr 8 %*%
 
-instance Arithmetic D.Matrix D.Matrix D.Matrix where
-    (%*%) = withFun2 Internal.c_dd_mul
+instance Arithmetic D.Matrix D.Matrix where
+    (@@) = withFun2 Internal.c_dd_mul
+    (%+%) = (+)
+    (%-%) = (-)
+    (%*%) = (*)
 
-instance Arithmetic D.Matrix S.SparseMatrix D.Matrix where
-    (%*%) = withDS Internal.c_ds_mul
+instance Arithmetic D.Matrix S.SparseMatrix where
+    (@@) = withDS Internal.c_ds_mul
+    (%+%) = flip (%+%)
+    (%-%) a b = a %+% C.map negate b
+    (%*%) = undefined
 
-instance Arithmetic S.SparseMatrix D.Matrix D.Matrix where
-    (%*%) = withSD Internal.c_sd_mul
+instance Arithmetic S.SparseMatrix D.Matrix where
+    (@@) = withSD Internal.c_sd_mul
+    (%+%) = withSD Internal.c_sd_plus
+    (%-%) a b = a %+% C.map negate b
+    (%*%) = undefined
 
-instance Arithmetic S.SparseMatrix S.SparseMatrix S.SparseMatrix where
-    (%*%) = withSS Internal.c_ss_mul
+instance Arithmetic S.SparseMatrix S.SparseMatrix where
+    (@@) = withSS Internal.c_ss_mul
+    (%+%) = withSS Internal.c_ss_plus
+    (%-%) a b = a %+% C.map negate b
+    (%*%) = withSS Internal.c_ss_cmul
 
-inverse :: (SingI n, Numeric a) => Matrix n n a -> Matrix n n a
-inverse = withFun1 Internal.c_inverse
 
 class Factorization mat where
+    -- | Matrix inverse
+    inverse :: (SingI n, Numeric a) => mat n n VS.Vector a -> mat n n VS.Vector a
+
     -- | Eigenvalues (not ordered) and
     -- eigenvectors (as columns) of a general square matrix.
     eigs :: (SingI k, SingI n, k <= n - 2)
@@ -65,6 +99,9 @@ class Factorization mat where
     cholesky :: (Numeric a, SingI n) => mat n n VS.Vector a -> mat n n VS.Vector a
 
 instance Factorization D.Matrix where
+
+    inverse = withFun1 Internal.c_inverse
+
     eigs s mat = unsafePerformIO $ do
         m1 <- CM.new
         m2 <- CM.new
@@ -82,6 +119,8 @@ instance Factorization D.Matrix where
     {-# INLINE cholesky #-}
 
 instance Factorization S.SparseMatrix where
+    inverse = undefined
+
     eigs s mat = unsafePerformIO $ do
         m1 <- CM.new
         m2 <- CM.new

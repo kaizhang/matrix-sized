@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 43b006c27629d881623029a823b02d3140e9d90f4da6887c801686d95e6f955a
+-- hash: 115db25b6c4fd3bcd8215271ab6c10a5a05ef6b68d6f7f8a8eb1c1aeb6f68b0f
 
 name:           matrix-sized
 version:        0.0.2
@@ -412,6 +412,7 @@ library
     , singletons
     , vector >=0.11
   if flag(parallel)
+    cc-options: -fopenmp
     cxx-options: -fopenmp -std=c++11
     ld-options: -fopenmp
   default-language: Haskell2010

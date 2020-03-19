@@ -38,7 +38,7 @@ import qualified Data.Matrix.Static.Sparse as S
 import qualified Data.Matrix.Static.Generic.Mutable as CM
 import qualified Data.Matrix.Static.Generic as C
 
-class (S.Zero a, Storable a) => Numeric a where
+class (S.Zero a, Storable a, Num a) => Numeric a where
     foreignType :: a -> CInt
 
 instance Numeric Float where foreignType _ = 0

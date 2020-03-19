@@ -4,6 +4,9 @@ module Data.Matrix.Static.Internal
     , c_ds_mul
     , c_sd_mul
     , c_ss_mul
+    , c_ss_cmul
+    , c_sd_plus
+    , c_ss_plus
     , c_inverse
     , c_cholesky
     , c_eigs
@@ -39,6 +42,13 @@ foreign import ccall "eigen_sd_mul"
           -> Ptr a -> CInt -> CInt
           -> IO CString
 
+foreign import ccall "eigen_sd_plus"
+    c_sd_plus :: CInt
+          -> Ptr a -> CInt -> CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+          -> Ptr a -> CInt -> CInt
+          -> IO CString
+
 foreign import ccall "eigen_ss_mul"
     c_ss_mul :: CInt
           -> Ptr (Ptr a) -> Ptr CInt -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
@@ -46,6 +56,19 @@ foreign import ccall "eigen_ss_mul"
           -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
           -> IO CString
 
+foreign import ccall "eigen_ss_cmul"
+    c_ss_cmul :: CInt
+          -> Ptr (Ptr a) -> Ptr CInt -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+          -> IO CString
+
+foreign import ccall "eigen_ss_plus"
+    c_ss_plus :: CInt
+          -> Ptr (Ptr a) -> Ptr CInt -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
+          -> IO CString
              
 foreign import ccall "eigen_inverse"
     c_inverse :: CInt
