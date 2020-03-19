@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b66f2a6cbe6f290d36d10d86fae15cde69b9db79b9ed88766553e77eb0eca496
+-- hash: 43b006c27629d881623029a823b02d3140e9d90f4da6887c801686d95e6f955a
 
 name:           matrix-sized
 version:        0.0.2
@@ -375,6 +375,11 @@ source-repository head
   type: git
   location: https://github.com/kaizhang/matrix-sized
 
+flag parallel
+  description: Enable multithreading
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Data.Matrix.Static.Dense
@@ -403,9 +408,25 @@ library
       stdc++
   build-depends:
       base >=4.10 && <5
-    , binary
-    , bytestring
-    , deepseq
+    , primitive >=0.6.4.0
+    , singletons
+    , vector >=0.11
+  if flag(parallel)
+    cxx-options: -fopenmp -std=c++11
+    ld-options: -fopenmp
+  default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_matrix_sized
+  hs-source-dirs:
+      tests
+  ghc-options: -Wall -threaded
+  build-depends:
+      base
+    , matrix-sized
     , primitive >=0.6.4.0
     , singletons
     , vector >=0.11

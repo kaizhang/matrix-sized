@@ -5,6 +5,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE StrictData #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -40,8 +41,7 @@ module Data.Matrix.Static.Dense
     , C.fromRows
     , C.fromColumns
     , C.unsafeFromVector
-
-    , diag
+    , replicate
     , diagRect
 
     -- * Conversions
@@ -90,10 +90,9 @@ module Data.Matrix.Static.Dense
     , C.create
     ) where
 
-import           Control.DeepSeq                   hiding (force)
 import           Control.Monad                     (liftM)
 import qualified Data.Vector.Generic               as G
-import Prelude hiding (mapM, mapM_, zipWith, map, sequence, sequence_, zip, unzip, zipWith3, zip3, unzip3)
+import Prelude hiding (replicate, mapM, mapM_, zipWith, map, sequence, sequence_, zip, unzip, zipWith3, zip3, unzip3)
 import GHC.TypeLits (type (<=))
 import Data.Singletons
 import Data.Tuple (swap)
@@ -134,9 +133,6 @@ instance (SingI r, SingI c, G.Vector v a, Fractional a) =>
         m1 / m2 = zipWith (/) m1 m2
         recip = C.map recip
         fromRational = undefined
-
-instance NFData (v a) => NFData (Matrix r c v a) where
-    rnf (Matrix vec) = rnf vec
 
 instance G.Vector v a => C.Matrix Matrix v a where
     -- | O(1) Return the size of matrix.
@@ -198,20 +194,14 @@ instance G.Vector v a => C.Matrix Matrix v a where
     sequence_ (Matrix vec) = G.sequence_ vec
     {-# INLINE sequence_ #-}
 
-{-
--- | O(m*n) Create an identity matrix
-ident :: (Num a, G.Vector v a)
-      => Matrix n n v a
-ident = diagRect 0 $ replicate 1
-{-# INLINE ident #-}
--}
-
--- | O(m*n) Create a square matrix with given diagonal, other entries default to 0
-diag :: (Num a, G.Vector v a, SingI n)
-     => Matrix n 1 v a       -- ^ diagonal
-     -> Matrix n n v a
-diag = diagRect 0
-{-# INLINE diag #-}
+-- | O(m*n) Create a constant matrix.
+replicate :: forall r c v a. (G.Vector v a, SingI r, SingI c)
+          => a -> Matrix r c v a
+replicate = C.unsafeFromVector . G.replicate (r*c)
+  where
+    r = fromIntegral $ fromSing (sing :: Sing r)
+    c = fromIntegral $ fromSing (sing :: Sing c)
+{-# INLINE replicate #-}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
 diagRect :: (G.Vector v a, SingI r, SingI c, n <= r, n <= c)

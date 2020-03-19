@@ -6,6 +6,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE StrictData #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Matrix.Static.Dense.Mutable
    ( -- * Mutable Matrix
@@ -17,7 +18,6 @@ module Data.Matrix.Static.Dense.Mutable
    , C.replicate
    ) where
 
-import           Control.DeepSeq
 import qualified Data.Vector.Generic.Mutable as GM
 import           Prelude                     hiding (read, replicate)
 import Data.Singletons
@@ -28,9 +28,6 @@ import qualified Data.Matrix.Static.Generic.Mutable as C
 -- | Column-major mutable matrix.
 data MMatrix :: C.MMatrixKind where
     MMatrix :: (SingI r, SingI c) => v s a -> MMatrix r c v s a
-
-instance (NFData (v s a)) => NFData (MMatrix r c v s a) where
-    rnf (MMatrix vec) = rnf vec
 
 instance GM.MVector v a => C.MMatrix MMatrix v a where
     dim :: forall r c s. MMatrix r c v s a -> (Int, Int)

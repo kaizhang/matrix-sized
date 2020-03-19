@@ -6,6 +6,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE StrictData #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE BangPatterns #-}
@@ -36,8 +37,6 @@ module Data.Matrix.Static.Sparse
     , C.fromVector
     , C.fromList
     , C.unsafeFromVector
-
-    , diag
     , diagRect
 
     -- * Conversions
@@ -48,7 +47,6 @@ module Data.Matrix.Static.Sparse
     , C.convertAny
    ) where
 
-import           Control.DeepSeq
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Storable.Mutable as SM
@@ -90,11 +88,11 @@ instance Eq a => Zero ([] a) where
 -- | Column-major mutable matrix.
 data SparseMatrix :: C.MatrixKind where
     SparseMatrix :: (SingI r, SingI c)
-                 => !(v a)           -- ^ Values: stores the coefficient values
+                 => (v a)           -- ^ Values: stores the coefficient values
                                      -- of the non-zeros.
-                 -> !(S.Vector CInt)  -- ^ InnerIndices: stores the row
+                 -> (S.Vector CInt)  -- ^ InnerIndices: stores the row
                                      -- (resp. column) indices of the non-zeros.
-                 -> !(S.Vector CInt)  -- ^ OuterStarts: stores for each column
+                 -> (S.Vector CInt)  -- ^ OuterStarts: stores for each column
                                      -- (resp. row) the index of the first
                                      -- non-zero in the previous two arrays.
                  -> SparseMatrix r c v a
@@ -104,9 +102,6 @@ instance (G.Vector v a, Zero a, Show a) => Show (SparseMatrix r c v a) where
       where
         (r,c) = C.dim mat
         vals = unlines $ map (unwords . map show . G.toList) $ C.toRows mat
-
-instance (NFData (v a)) => NFData (SparseMatrix r c v a) where
-    rnf (SparseMatrix vec inner outer) = rnf vec
 
 instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     -- | O(1) Return the size of matrix.
@@ -165,13 +160,6 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     map f (SparseMatrix vec inner outer) = SparseMatrix (G.map f vec) inner outer
     imap = undefined
     {-# INLINE map #-}
-
--- | O(m*n) Create a square matrix with given diagonal.
-diag :: (G.Vector v a, Zero a, SingI n)
-     => D.Matrix n 1 v a       -- ^ diagonal
-     -> SparseMatrix n n v a
-diag = diagRect
-{-# INLINE diag #-}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
 diagRect :: (G.Vector v a, Zero a, SingI r, SingI c, n <= r, n <= c)

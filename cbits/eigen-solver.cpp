@@ -62,3 +62,18 @@ RET cholesky(void* px, const void* pa, int n)
 }
 API(cholesky, (int code,
     void* px, const void* pa, int n), (px,pa,n));
+
+
+/*
+template <class T>
+RET bdcsvd(void* px, int r, int c
+{
+    typedef Map< Matrix<T,Dynamic,Dynamic> > MapMatrix;
+    MapMatrix x((T*)px, n, n);
+    MapMatrix A((T*)pa, n, n);
+    x = A.llt().matrixL();
+    return 0;
+}
+API(cholesky, (int code,
+    void* px, const void* pa, int n), (px,pa,n));
+*/

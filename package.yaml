@@ -1,5 +1,5 @@
 name: matrix-sized
-version: "0.0.1"
+version: "0.0.2"
 category: "Math"
 synopsis:    "Haskell matrix library with interface to C++ linear algebra libraries."
 description: "A Haskell implementation of matrices with statically known sizes.
@@ -31,12 +31,15 @@ extra-source-files:
 
 dependencies:
   - base >= 4.10 && < 5
-  - binary
-  - bytestring
-  - deepseq
   - primitive >= 0.6.4.0
   - singletons
   - vector >= 0.11
+
+flags:
+  parallel:
+    description: Enable multithreading
+    manual: true
+    default: false
 
 library:
   source-dirs:
@@ -58,21 +61,35 @@ library:
     - eigen3
     - spectra
     - cbits
+
+  when:
+  - condition: flag(parallel)
+    ld-options:
+    - -fopenmp
+    cxx-options:
+    - -fopenmp
+    - -std=c++11
+
   cxx-sources:
     - cbits/*.cpp
-  cxx-options: "-std=c++11"
+  cxx-options:
+    - -std=c++11
+
   extra-libraries: stdc++
 
+tests:
+  test:
+    main: "Main.hs"
+    ghc-options: "-threaded"
 
-#tests:
-#  spec:
-#    main: "tests.hs"
-#    ghc-options: "-threaded -O0"
+    source-dirs:
+      - tests
 
-#    source-dirs:
-#      - test
+    dependencies:
+      - base
+      - matrix-sized
+      - singletons
 
-#    dependencies:
-#      - base
+    #ld-options: "-fopenmp"
 
 github: kaizhang/matrix-sized

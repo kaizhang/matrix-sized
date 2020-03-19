@@ -6,35 +6,31 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE StrictData #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Data.Matrix.Static.Sparse.Mutable
    ( -- * Mutable sparse matrix
      MSparseMatrix(..)
    ) where
 
-import           Control.DeepSeq
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Storable as S
 import           Prelude                     hiding (read, replicate)
 import Data.Singletons
-import Control.Monad.Primitive     (PrimMonad, PrimState)
 
 import qualified Data.Matrix.Static.Generic.Mutable as C
 
 -- | Column-major mutable matrix.
 data MSparseMatrix :: C.MMatrixKind where
     MSparseMatrix :: (SingI r, SingI c)
-                  => !(v s a)         -- ^ Values: stores the coefficient values
+                  => (v s a)         -- ^ Values: stores the coefficient values
                                       -- of the non-zeros.
-                  -> !(S.Vector Int)  -- ^ InnerIndices: stores the row
+                  -> (S.Vector Int)  -- ^ InnerIndices: stores the row
                                       -- (resp. column) indices of the non-zeros.
-                  -> !(S.Vector Int)  -- ^ OuterStarts: stores for each column
+                  -> (S.Vector Int)  -- ^ OuterStarts: stores for each column
                                       -- (resp. row) the index of the first
                                       -- non-zero in the previous two arrays.
                   -> MSparseMatrix r c v s a
-
-instance (NFData (v s a)) => NFData (MSparseMatrix r c v s a) where
-    rnf (MSparseMatrix vec inner outer) = rnf vec
 
 instance GM.MVector v a => C.MMatrix MSparseMatrix v a where
     dim :: forall r c s. MSparseMatrix r c v s a -> (Int, Int)
