@@ -34,6 +34,7 @@ module Data.Matrix.Static.Sparse
 
     -- * Construction
     , C.empty
+    , fromTriplet
     , C.fromVector
     , C.fromList
     , C.unsafeFromVector
@@ -48,10 +49,12 @@ module Data.Matrix.Static.Sparse
    ) where
 
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Storable.Mutable as SM
 import Data.Singletons
 import Control.Monad
+import Control.Monad.ST (runST)
 import           Data.Bits                         (shiftR)
 import Text.Printf (printf)
 import GHC.TypeLits (type (<=))
@@ -161,6 +164,37 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     imap = undefined
     {-# INLINE map #-}
 
+-- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
+-- duplicate entries are carried over to the CSR represention
+fromTriplet :: forall t r c v a. (Traversable t, G.Vector v a, SingI r, SingI c)
+            => t (Int, Int, a) -> SparseMatrix r c v a
+fromTriplet triplets = SparseMatrix val inner outer
+  where
+    outer = S.scanl (+) 0 $ S.create $ do
+        vec <- SM.replicate c 0
+        _ <- flip mapM triplets $ \(_, j, _) -> 
+            SM.modify vec (+1) j
+        return vec
+    (val, inner) = runST $ do
+        outer' <- S.thaw outer
+        val' <- GM.new nnz
+        inner' <- SM.new nnz
+        _ <- flip mapM triplets $ \(i, j, v) -> do
+            idx <- fromIntegral <$> SM.read outer' j
+            GM.write val' idx v
+            SM.write inner' idx $ fromIntegral i
+            SM.modify outer' (+1) j
+        (,) <$> G.unsafeFreeze val' <*> S.unsafeFreeze inner'
+    nnz = length triplets
+    c = fromIntegral $ fromSing (sing :: Sing c)
+{-# INLINE fromTriplet #-}
+
+{-
+toTriplet :: (G.Vector v1 (Int, Int, a), G.Vector v2 a, SingI r, SingI c)
+          => SparseMatrix r c v2 a -> v1 (Int, Int, a)
+toTriplet mat = 
+-}
+
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
 diagRect :: (G.Vector v a, Zero a, SingI r, SingI c, n <= r, n <= c)
          => D.Matrix n 1 v a       -- ^ diagonal
@@ -169,6 +203,7 @@ diagRect d = SparseMatrix (C.flatten d) (S.enumFromN 0 n) (S.enumFromN 0 $ n + 1
   where
     n = C.rows d
 {-# INLINE diagRect #-}
+
 
 binarySearchByBounds :: S.Vector CInt -> CInt -> Int -> Int -> Maybe Int
 binarySearchByBounds vec x = loop
