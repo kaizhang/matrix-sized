@@ -71,7 +71,7 @@ API(sd_mul, (int code,
     const void* p1, int r1, int c1), (p,r,c,val,outer,inner,r2,c2,s,p1,r1,c1));
 
 template <class T>
-RET ss_mul( void** v, void** o, void** i, int r, int c, int* s,
+RET ss_mul( void** v, void* o, void** i, int r, int c, int* s,
     const void* v1, const void* o1, const void* i1, int r1, int c1, int s1,
     const void* v2, const void* o2, const void* i2, int r2, int c2, int s2)
 {
@@ -79,20 +79,20 @@ RET ss_mul( void** v, void** o, void** i, int r, int c, int* s,
     MapSparseMatrix a(r1, c1, s1, (int*)o1, (int*)i1, (T*)v1);
     MapSparseMatrix b(r2, c2, s2, (int*)o2, (int*)i2, (T*)v2);
     SparseMatrix<T> M = (a * b).pruned();
+
+    memcpy(o, M.outerIndexPtr(), (c+1) * sizeof(int));
+
     *s = M.nonZeros();
-    T* p1 = (T*) malloc(*s * sizeof(T));
-    memcpy(p1, M.valuePtr(), *s * sizeof(T));
+    T* p1 = (T*) malloc((*s) * sizeof(T));
+    memcpy(p1, M.valuePtr(), (*s) * sizeof(T));
     *v = p1;
-    int* p2 = (int*) malloc(*s * sizeof(int));
-    memcpy(p2, M.innerIndexPtr(), *s * sizeof(T));
+    int* p2 = (int*) malloc((*s) * sizeof(int));
+    memcpy(p2, M.innerIndexPtr(), (*s) * sizeof(int));
     *i = p2;
-    int* p3 = (int*) malloc(c * sizeof(int));
-    memcpy(p3, M.outerIndexPtr(), c * sizeof(int));
-    *o = p3;
     return 0;
 }
 API(ss_mul, (int code,
-    void** v, void** o, void** i, int r, int c, int* s,
+    void** v, void* o, void** i, int r, int c, int* s,
     const void* v1, const void* o1, const void* i1, int r1, int c1, int s1,
     const void* v2, const void* o2, const void* i2, int r2, int c2, int s2),
     (v,o,i,r,c,s,v1,o1,i1,r1,c1,s1,v2,o2,i2,r2,c2,s2));

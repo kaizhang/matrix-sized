@@ -41,6 +41,7 @@ import qualified Data.Vector.Generic         as G
 import Text.Printf (printf)
 import Prelude hiding (map, mapM, mapM_, sequence, sequence_)
 import qualified Data.List as L
+import Data.Tuple (swap)
 import Data.Kind (Type)
 import GHC.TypeLits (Nat, type (<=))
 import Data.Singletons (SingI, Sing, fromSing, sing, withSomeSing)
@@ -62,7 +63,7 @@ class (MMatrix (Mutable mat) (G.Mutable v) a, G.Vector v a) => Matrix (mat :: Ma
     -- | Convert matrix to vector in column order.
     -- Default algorithm is O((m*n) * O(unsafeIndex)).
     flatten :: mat r c v a -> v a
-    flatten mat = G.generate (r*c) $ \i -> unsafeIndex mat (i `divMod` r)
+    flatten mat = G.generate (r*c) $ \i -> unsafeIndex mat (swap $ i `divMod` r)
       where
         (r,c) = dim mat
     {-# INLINE flatten #-}
@@ -90,7 +91,7 @@ class (MMatrix (Mutable mat) (G.Mutable v) a, G.Vector v a) => Matrix (mat :: Ma
 
     transpose :: (SingI r, SingI c) => mat r c v a -> mat c r v a
     transpose mat = unsafeFromVector $ G.generate (r*c) $ \x ->
-        unsafeIndex mat $ x `divMod` r
+        unsafeIndex mat $ x `divMod` c
       where
        (r, c) = dim mat
     {-# INLINE transpose #-}

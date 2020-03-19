@@ -41,7 +41,7 @@ foreign import ccall "eigen_sd_mul"
 
 foreign import ccall "eigen_ss_mul"
     c_ss_mul :: CInt
-          -> Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
+          -> Ptr (Ptr a) -> Ptr CInt -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
           -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
           -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
           -> IO CString

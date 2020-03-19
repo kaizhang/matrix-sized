@@ -127,16 +127,19 @@ withSD f m2 m1 = unsafePerformIO $ do
 {-# INLINE withSD #-}
 
 mkSparseMatrix :: forall r c a. (Storable a, SingI r, SingI c)
-    => (Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr (Ptr CInt) -> IO Int)
+    => (Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr CInt -> IO Int)
     -> IO (SparseMatrix r c a)
-mkSparseMatrix f = alloca $ \ppv -> alloca $ \ppi -> alloca $ \ppo -> do
-    n <- f ppv ppi ppo
-    pv <- peek ppv >>= newForeignPtr finalizerFree
-    pinner <- peek ppi >>= newForeignPtr finalizerFree
-    pouter <- peek ppo >>= newForeignPtr finalizerFree
+mkSparseMatrix f = do
+    outer' <- VSM.new $ c + 1
+    (n, pv, pinner) <- VSM.unsafeWith outer' $ \pouter -> alloca $ \ppv -> alloca $ \ppi -> do
+        n <- f ppv ppi pouter
+        pv <- peek ppv >>= newForeignPtr finalizerFree
+        pinner <- peek ppi >>= newForeignPtr finalizerFree
+        return (n, pv, pinner)
+    outer <- VS.unsafeFreeze outer'
     return $ S.SparseMatrix (VS.unsafeFromForeignPtr0 pv n)
         (VS.unsafeFromForeignPtr0 pinner n)
-        (VS.unsafeFromForeignPtr0 pouter $ c + 1)
+        outer
   where
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE mkSparseMatrix #-}
@@ -144,7 +147,7 @@ mkSparseMatrix f = alloca $ \ppv -> alloca $ \ppi -> alloca $ \ppo -> do
 withSS :: forall r1 c1 r2 c2 r3 c3 a.
             (SingI r3, SingI c3, Numeric a)
        => ( CInt
-         -> Ptr (Ptr a) -> Ptr (Ptr CInt) -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
+         -> Ptr (Ptr a) -> Ptr CInt -> Ptr (Ptr CInt) -> CInt -> CInt -> Ptr CInt
          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
          -> Ptr a -> Ptr CInt -> Ptr CInt -> CInt -> CInt -> CInt
          -> IO CString )
