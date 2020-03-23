@@ -18,7 +18,9 @@ extern "C" RET spectral_eigs(
     MapComplexMatrix V((T3*)v, n, k);
 
     DenseGenMatProd<double> op(M);
-    GenEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigs(&op, k, 2*k+1);
+    int ncv = 2 * k + 1;
+    ncv = (ncv <= n) ? ncv : n;
+    GenEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigs(&op, k, ncv);
     eigs.init();
     int nconv = eigs.compute();
     if(eigs.info() == 0)
@@ -42,7 +44,9 @@ extern "C" RET spectral_seigs(
     MapComplexMatrix V((T3*)v, n, k);
 
     SparseGenMatProd<double> op(M);
-    GenEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigs(&op, k, 2*k+1);
+    int ncv = 2 * k + 1;
+    ncv = (ncv <= n) ? ncv : n;
+    GenEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigs(&op, k, ncv);
     eigs.init();
     int nconv = eigs.compute();
     if(eigs.info() == 0)

@@ -17,8 +17,7 @@ module Data.Matrix.Static.LinearAlgebra
 import qualified Data.Vector.Storable as VS
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Complex (Complex)
-import Data.Singletons
-import GHC.TypeLits (type (<=), type (-))
+import Data.Singletons.Prelude hiding ((@@), type (==))
 import Data.Type.Bool (If)
 import Data.Type.Equality (type (==))
 
@@ -90,7 +89,7 @@ class Factorization mat where
 
     -- | Eigenvalues (not ordered) and
     -- eigenvectors (as columns) of a general square matrix.
-    eigs :: (SingI k, SingI n, k <= n - 2)
+    eigs :: (SingI k, SingI n, (k <= n - 2) ~ 'True)
          => Sing k
          -> mat n n VS.Vector Double
          -> (Matrix k 1 (Complex Double), Matrix n k (Complex Double))

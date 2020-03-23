@@ -91,6 +91,8 @@ tests:
       - base
       - matrix-sized
       - singletons
+      - tasty
+      - tasty-quickcheck
 
     #ld-options: "-fopenmp"
 

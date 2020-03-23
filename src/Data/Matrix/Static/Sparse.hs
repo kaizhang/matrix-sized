@@ -38,6 +38,7 @@ module Data.Matrix.Static.Sparse
     , C.fromVector
     , C.fromList
     , C.unsafeFromVector
+    , diag
     , diagRect
 
     -- * Conversions
@@ -214,6 +215,13 @@ toTriplet mat =
 -}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
+diag :: (G.Vector v a, Zero a, SingI n)
+     => D.Matrix n 1 v a       -- ^ diagonal
+     -> SparseMatrix n n v a
+diag = diagRect
+{-# INLINE diag #-}
+
+-- | O(m*n) Create a rectangular matrix with default values and given diagonal
 diagRect :: (G.Vector v a, Zero a, SingI r, SingI c, n <= r, n <= c)
          => D.Matrix n 1 v a       -- ^ diagonal
          -> SparseMatrix r c v a
@@ -221,7 +229,6 @@ diagRect d = SparseMatrix (C.flatten d) (S.enumFromN 0 n) (S.enumFromN 0 $ n + 1
   where
     n = C.rows d
 {-# INLINE diagRect #-}
-
 
 binarySearchByBounds :: S.Vector CInt -> CInt -> Int -> Int -> Maybe Int
 binarySearchByBounds vec x = loop
