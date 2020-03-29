@@ -1,5 +1,5 @@
 name: matrix-sized
-version: "0.0.2"
+version: "0.0.3"
 category: "Math"
 synopsis:    "Haskell matrix library with interface to C++ linear algebra libraries."
 description: "A Haskell implementation of matrices with statically known sizes.
@@ -56,6 +56,7 @@ library:
 
   other-modules: 
     - Data.Matrix.Static.Internal
+    - Data.Matrix.Static.LinearAlgebra.Internal
 
   include-dirs:
     - eigen3
@@ -86,6 +87,9 @@ tests:
 
     source-dirs:
       - tests
+
+    exposed-modules: []
+    other-modules: []
 
     dependencies:
       - base

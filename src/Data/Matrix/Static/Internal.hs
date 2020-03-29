@@ -11,6 +11,7 @@ module Data.Matrix.Static.Internal
     , c_cholesky
     , c_eigs
     , c_seigs
+    , c_bdcsvd
     ) where
 
 import Data.Complex (Complex)
@@ -88,3 +89,7 @@ foreign import ccall "spectral_seigs"
     c_seigs :: CInt -> Ptr (Complex Double) -> Ptr (Complex Double)
             -> Ptr Double -> Ptr CInt -> Ptr CInt
             -> CInt -> CInt -> IO CString
+
+foreign import ccall "eigen_bdcsvd"
+    c_bdcsvd :: CInt -> Ptr a -> Ptr a -> Ptr a
+             -> Ptr a -> CInt -> CInt -> IO CString

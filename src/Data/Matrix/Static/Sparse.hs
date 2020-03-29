@@ -77,6 +77,9 @@ instance Zero Int where
 instance Zero Float where
     zero = 0.0
 
+instance Zero CFloat where
+    zero = 0.0
+
 instance Zero Double where
     zero = 0.0
 

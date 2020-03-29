@@ -88,11 +88,13 @@ module Data.Matrix.Static.Dense
     , C.freeze
     , C.unsafeFreeze
     , C.create
+
+    , sum
     ) where
 
 import           Control.Monad                     (liftM)
 import qualified Data.Vector.Generic               as G
-import Prelude hiding (replicate, mapM, mapM_, zipWith, map, sequence, sequence_, zip, unzip, zipWith3, zip3, unzip3)
+import Prelude hiding (replicate, mapM, mapM_, zipWith, map, sequence, sequence_, zip, unzip, zipWith3, zip3, unzip3, sum)
 import GHC.TypeLits (type (<=))
 import Data.Singletons
 import Data.Tuple (swap)
@@ -352,6 +354,9 @@ convert :: (G.Vector v a, G.Vector w a) => Matrix r c v a -> Matrix r c w a
 convert (Matrix vec) = Matrix $ G.convert vec
 {-# INLINE convert #-}
 
+sum :: (Num a, G.Vector v a) => Matrix r c v a -> a
+sum (Matrix vec) = G.sum vec
+{-# INLINE sum #-}
 
 -- Helper
 toIndex :: Int -> Int -> (Int, Int)

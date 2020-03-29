@@ -9,9 +9,10 @@
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE TypeOperators #-}
 module Data.Matrix.Static.LinearAlgebra
-    ( Arithmetic(..)
+    ( module Data.Matrix.Static.LinearAlgebra.Types
+    , Arithmetic(..)
     , Factorization(..)
-    , module Data.Matrix.Static.LinearAlgebra.Types
+    , svd
     ) where
 
 import qualified Data.Vector.Storable as VS
@@ -27,6 +28,7 @@ import qualified Data.Matrix.Static.Generic.Mutable as CM
 import qualified Data.Matrix.Static.Generic as C
 import qualified Data.Matrix.Static.Internal as Internal
 import Data.Matrix.Static.LinearAlgebra.Types
+import Data.Matrix.Static.LinearAlgebra.Internal
 
 class Arithmetic (mat1 :: C.MatrixKind) (mat2 :: C.MatrixKind) where
     -- | Matrix multiplication
@@ -97,6 +99,7 @@ class Factorization mat where
     -- | Cholesky decomposition
     cholesky :: (Numeric a, SingI n) => mat n n VS.Vector a -> mat n n VS.Vector a
 
+
 instance Factorization D.Matrix where
 
     inverse = withFun1 Internal.c_inverse
@@ -134,3 +137,22 @@ instance Factorization S.SparseMatrix where
     {-# INLINE eigs #-}
 
     cholesky = undefined
+
+-- | Singular value decomposition
+svd :: forall n p a m. (Numeric a, SingI n, SingI p, SingI m, m ~ Min n p)
+    => Matrix n p a
+    -> (Matrix n m a, Matrix m 1 a, Matrix p m a)
+svd mat = unsafePerformIO $ do
+    mu <- CM.new
+    ms <- CM.new
+    mv <- CM.new
+    checkResult $ unsafeWith' mu $ \pu _ _ -> unsafeWith' ms $ \ps _ _ ->
+        unsafeWith' mv $ \pv _ _ -> unsafeWith mat $ \px r c ->
+            Internal.c_bdcsvd (foreignType (undefined :: a))
+                pu ps pv px r c
+    u <- C.unsafeFreeze mu
+    s <- C.unsafeFreeze ms
+    v <- C.unsafeFreeze mv
+    return (u, s, v)
+{-# INLINE svd #-}
+

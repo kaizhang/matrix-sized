@@ -68,16 +68,23 @@ API(cholesky, (int code,
     void* px, const void* pa, int n), (px,pa,n));
 
 
-/*
-template <class T>
-RET bdcsvd(void* px, int r, int c
+template <class T, class TT>
+RET bdcsvd(
+    void* pu, void* ps, void* pv, 
+    const void* px, int r, int c)
 {
+    int m = r < c ? r : c;
     typedef Map< Matrix<T,Dynamic,Dynamic> > MapMatrix;
-    MapMatrix x((T*)px, n, n);
-    MapMatrix A((T*)pa, n, n);
-    x = A.llt().matrixL();
+    typedef Map< Matrix<TT,Dynamic,Dynamic> > MapMatrix2;
+    MapMatrix A((T*)px, r, c);
+    MapMatrix U((T*)pu, r, m);
+    MapMatrix2 s((TT*)ps, m, 1);
+    MapMatrix V((T*)pv, c, m);
+    BDCSVD< Matrix<T,Dynamic,Dynamic>> svd(A, ComputeThinU|ComputeThinV);
+    U = svd.matrixU();
+    V = svd.matrixV();
+    s = svd.singularValues();
     return 0;
 }
-API(cholesky, (int code,
-    void* px, const void* pa, int n), (px,pa,n));
-*/
+API2(bdcsvd, (int code,
+    void* pu, void* ps, void* pv, const void* px, int r, int c), (pu,ps,pv,px,r,c));

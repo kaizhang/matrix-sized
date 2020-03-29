@@ -39,6 +39,18 @@ extern "C" RET eigen_##name args {\
 	GUARD_END\
 }
 
+#define API2(name,args,call) \
+extern "C" RET eigen_##name args {\
+	GUARD_START\
+	switch (code) {\
+		case 0: return name<T0, T0>call;\
+		case 1: return name<T1, T1>call;\
+		case 2: return name<T2, T0>call;\
+		case 3: return name<T3, T1>call;\
+	}\
+	GUARD_END\
+}
+
 typedef float T0;
 typedef double T1;
 typedef std::complex<float> T2;
