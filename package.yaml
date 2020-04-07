@@ -88,12 +88,11 @@ tests:
     source-dirs:
       - tests
 
-    exposed-modules: []
-    other-modules: []
-
     dependencies:
       - base
+      - data-ordlist
       - matrix-sized
+      - ieee754
       - singletons
       - tasty
       - tasty-quickcheck

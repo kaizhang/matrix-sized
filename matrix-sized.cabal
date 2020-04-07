@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: abb4776c33ca94932b94a9f5c592f60e97a02501f7ef736c5018d586a60c0746
+-- hash: 87788c56237f2039d3ebeb46e17473858919e0268331869733a0453291a1e916
 
 name:           matrix-sized
 version:        0.0.3
@@ -421,11 +421,18 @@ library
 test-suite test
   type: exitcode-stdio-1.0
   main-is: Main.hs
+  other-modules:
+      Test.Base
+      Test.LinearAlgebra
+      Test.Utils
+      Paths_matrix_sized
   hs-source-dirs:
       tests
   ghc-options: -Wall -threaded
   build-depends:
       base
+    , data-ordlist
+    , ieee754
     , matrix-sized
     , primitive >=0.6.4.0
     , singletons

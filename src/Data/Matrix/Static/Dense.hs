@@ -42,6 +42,7 @@ module Data.Matrix.Static.Dense
     , C.fromColumns
     , C.unsafeFromVector
     , replicate
+    , diag
     , diagRect
 
     -- * Conversions
@@ -90,11 +91,15 @@ module Data.Matrix.Static.Dense
     , C.create
 
     , sum
+    , all
+    , any
     ) where
 
 import           Control.Monad                     (liftM)
 import qualified Data.Vector.Generic               as G
-import Prelude hiding (replicate, mapM, mapM_, zipWith, map, sequence, sequence_, zip, unzip, zipWith3, zip3, unzip3, sum)
+import Prelude hiding ( replicate, mapM, mapM_, zipWith, map
+                      , sequence, sequence_, zip, unzip, zipWith3
+                      , zip3, unzip3, sum, all, any )
 import GHC.TypeLits (type (<=))
 import Data.Singletons
 import Data.Tuple (swap)
@@ -204,6 +209,17 @@ replicate = C.unsafeFromVector . G.replicate (r*c)
     r = fromIntegral $ fromSing (sing :: Sing r)
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE replicate #-}
+
+-- | O(m*n) Create a square matrix with default values and given diagonal
+diag :: (G.Vector v a, SingI n)
+     => a                    -- ^ default value
+     -> Matrix n 1 v a       -- ^ diagonal
+     -> Matrix n n v a
+diag z0 d = C.create $ do
+    mat <- DM.replicate z0
+    C.imapM_ (DM.unsafeWrite mat) d
+    return mat
+{-# INLINE diag #-}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
 diagRect :: (G.Vector v a, SingI r, SingI c, n <= r, n <= c)
@@ -358,7 +374,17 @@ sum :: (Num a, G.Vector v a) => Matrix r c v a -> a
 sum (Matrix vec) = G.sum vec
 {-# INLINE sum #-}
 
+all :: G.Vector v a => (a -> Bool) -> Matrix r c v a -> Bool
+all f (Matrix vec) = G.all f vec
+{-# INLINE all #-}
+
+any :: G.Vector v a => (a -> Bool) -> Matrix r c v a -> Bool
+any f (Matrix vec) = G.any f vec
+{-# INLINE any #-}
+
 -- Helper
-toIndex :: Int -> Int -> (Int, Int)
+toIndex :: Int   -- ^ Number of rows
+        -> Int   -- ^ 1-d index
+        -> (Int, Int)   -- ^ 2-d index
 toIndex r i = swap $ i `divMod` r
 {-# INLINE toIndex #-}

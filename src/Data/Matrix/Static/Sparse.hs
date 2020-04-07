@@ -54,10 +54,10 @@ import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Storable.Mutable as SM
 import Data.Singletons
-import Control.Monad
 import Control.Monad.ST (runST)
 import           Data.Bits                         (shiftR)
 import Text.Printf (printf)
+import Data.Tuple (swap)
 import GHC.TypeLits (type (<=))
 import Foreign.C.Types
 import Data.Complex
@@ -104,27 +104,15 @@ data SparseMatrix :: C.MatrixKind where
                                      -- non-zero in the previous two arrays.
                  -> SparseMatrix r c v a
 
+instance (G.Vector v a, Eq (v a)) => Eq (SparseMatrix r c v a) where
+    (==) (SparseMatrix a b c) (SparseMatrix a' b' c') =
+        a == a' && b == b' && c == c'
+
 instance (G.Vector v a, Zero a, Show a) => Show (SparseMatrix r c v a) where
     show mat = printf "(%d x %d)\n%s" r c vals
       where
         (r,c) = C.dim mat
         vals = unlines $ map (unwords . map show . G.toList) $ C.toRows mat
-
-instance (SingI r, SingI c, G.Vector v a, Zero a, Num a) =>
-    Num (SparseMatrix r c v a) where
-        m1 + m2 = undefined
-        m1 - m2 = undefined
-        m1 * m2 = undefined
-        negate = C.map negate
-        abs = C.map abs
-        signum = undefined
-        fromInteger = undefined
-
-instance (SingI r, SingI c, G.Vector v a, Zero a, Fractional a) =>
-    Fractional (SparseMatrix r c v a) where
-        m1 / m2 = undefined
-        recip = C.map recip
-        fromRational = undefined
 
 instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     -- | O(1) Return the size of matrix.
@@ -148,24 +136,12 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     -- | O(1) Create matrix from vector containing columns.
     unsafeFromVector :: forall r c. (G.Vector v a, SingI r, SingI c)
            => v a -> SparseMatrix r c v a
-    unsafeFromVector vec = SparseMatrix
-        (G.generate n (G.unsafeIndex vec . S.unsafeIndex nz))
-        inner outer
+    unsafeFromVector vec = fromTriplet vec'
       where
-        inner = S.map fromIntegral $ S.map (`mod` c) nz
-        outer = S.create $ do
-            v <- SM.replicate (c+1) 0
-            S.forM_ nz $ \x -> do
-                let i = x `div` r
-                SM.unsafeModify v succ (i+1)
-            forM_ [1..c] $ \i -> do
-                x <- SM.unsafeRead v (i-1)
-                SM.unsafeModify v (+x) i
-            return v
-        nz = S.filter (\i -> vec `G.unsafeIndex` i /= zero) $ S.enumFromN 0 (r*c)
-        n = S.length nz
+        vec' = map (\((a,b),c) -> (a,b,c)) $ filter ((/=zero) . snd) $
+            zipWith (\i x -> (toIndex i, x)) [0..] $ G.toList vec
+        toIndex i = swap $ i `divMod` r
         r = fromIntegral $ fromSing (sing :: Sing r)
-        c = fromIntegral $ fromSing (sing :: Sing c)
     {-# INLINE unsafeFromVector #-}
 
     transpose (SparseMatrix val inner outer) = undefined 
@@ -245,3 +221,12 @@ binarySearchByBounds vec x = loop
         k = (u+l) `shiftR` 1
         x' = vec `S.unsafeIndex` k
 {-# INLINE binarySearchByBounds #-}
+
+
+-------------------------------------------------------------------------------
+-- Helper
+-------------------------------------------------------------------------------
+
+--getIndex :: Int -> (Int, Int)
+--getIndex = 
+--{-# INLINE getIndex #-}

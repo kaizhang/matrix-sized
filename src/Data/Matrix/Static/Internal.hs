@@ -9,8 +9,11 @@ module Data.Matrix.Static.Internal
     , c_ss_plus
     , c_inverse
     , c_cholesky
+    , c_eig
     , c_eigs
+    , c_eigsh
     , c_seigs
+    , c_seigsh
     , c_bdcsvd
     ) where
 
@@ -81,15 +84,27 @@ foreign import ccall "eigen_cholesky"
     c_cholesky :: CInt
                -> Ptr a -> Ptr a ->  CInt -> IO CString
 
+foreign import ccall "eigen_eig"
+    c_eig :: Ptr (Complex Double) -> Ptr (Complex Double)
+          -> Ptr Double -> CInt -> IO CString
+
 foreign import ccall "spectral_eigs"
     c_eigs :: CInt -> Ptr (Complex Double)
            -> Ptr (Complex Double) -> Ptr Double -> CInt -> IO CString
+
+foreign import ccall "spectral_eigsh"
+    c_eigsh :: CInt -> Ptr Double -> Ptr Double -> Ptr Double -> CInt -> IO CString
 
 foreign import ccall "spectral_seigs"
     c_seigs :: CInt -> Ptr (Complex Double) -> Ptr (Complex Double)
             -> Ptr Double -> Ptr CInt -> Ptr CInt
             -> CInt -> CInt -> IO CString
 
+foreign import ccall "spectral_seigsh"
+    c_seigsh :: CInt -> Ptr Double -> Ptr Double
+             -> Ptr Double -> Ptr CInt -> Ptr CInt
+             -> CInt -> CInt -> IO CString
+
 foreign import ccall "eigen_bdcsvd"
-    c_bdcsvd :: CInt -> Ptr a -> Ptr a -> Ptr a
+    c_bdcsvd :: CInt -> Ptr a -> Ptr b -> Ptr a
              -> Ptr a -> CInt -> CInt -> IO CString
