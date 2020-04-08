@@ -12,6 +12,7 @@ module Test.LinearAlgebra (linearAlgebra) where
 import Test.Tasty
 import Data.Matrix.Static.LinearAlgebra
 import qualified Data.Matrix.Static.Dense as D
+import qualified Data.Matrix.Static.Generic as G
 import qualified Data.Matrix.Static.Sparse as S
 import Data.Singletons hiding ((@@))
 import Data.Singletons.Prelude (Min)
@@ -49,6 +50,7 @@ eigenTest = testGroup "Eigendecomposition"
     [ testProperty "Full" eigen1
     , testProperty "Partial dense" eigen2
     , testProperty "Partial symmetric dense" eigen3
+    , testProperty "Partial symmetric sparse" eigen4
     ]
   where
     eigen1 :: Matrix 100 100 Double -> Bool
@@ -66,6 +68,13 @@ eigenTest = testGroup "Eigendecomposition"
       where
         m = raw %+% D.transpose raw
         (d, v)= eigSH (sing :: Sing 99) m
+    eigen4 :: SparseMatrix 100 100 Double -> Bool
+    eigen4 raw = m @@ v ~= v @@ S.diag d
+      where
+        m = raw %+% D.transpose raw
+        (d, v)= eigSH (sing :: Sing 99) m
+
+
 
 {-
 propTranspose :: Matrix 50 100 Double -> Bool

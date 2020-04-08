@@ -35,6 +35,8 @@ module Data.Matrix.Static.Sparse
     -- * Construction
     , C.empty
     , fromTriplet
+    , fromTripletC
+    , toTriplet
     , C.fromVector
     , C.fromList
     , C.unsafeFromVector
@@ -57,6 +59,8 @@ import Data.Singletons
 import Control.Monad.ST (runST)
 import           Data.Bits                         (shiftR)
 import Text.Printf (printf)
+import Conduit
+import Data.Conduit.Internal (zipSinks)
 import Data.Tuple (swap)
 import GHC.TypeLits (type (<=))
 import Foreign.C.Types
@@ -144,7 +148,10 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
         r = fromIntegral $ fromSing (sing :: Sing r)
     {-# INLINE unsafeFromVector #-}
 
-    transpose (SparseMatrix val inner outer) = undefined 
+    transpose mat = runIdentity $ fromTripletC source
+      where
+        source = toTriplet mat .| mapC (\(i,j,x) -> (j,i,x))
+    {-# INLINE transpose #-}
 
     thaw = undefined
     {-# INLINE thaw #-}
@@ -159,8 +166,14 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
     {-# INLINE unsafeFreeze #-}
 
     map f (SparseMatrix vec inner outer) = SparseMatrix (G.map f vec) inner outer
-    imap = undefined
     {-# INLINE map #-}
+
+    imap f mat@(SparseMatrix _ inner outer) = SparseMatrix vec' inner outer
+      where
+        vec' = runST $ runConduit $ toTriplet mat .| mapC g .| sinkVector
+        g (i,j,x) = f (i,j) x
+    {-# INLINE imap #-}
+    
 
 -- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
 -- duplicate entries are carried over to the CSR represention
@@ -171,27 +184,70 @@ fromTriplet triplets = SparseMatrix val inner outer
     outer = S.scanl (+) 0 $ S.create $ do
         vec <- SM.replicate c 0
         _ <- flip mapM triplets $ \(_, j, _) -> 
-            SM.modify vec (+1) j
+            SM.unsafeModify vec (+1) j
         return vec
     (val, inner) = runST $ do
         outer' <- S.thaw outer
         val' <- GM.new nnz
         inner' <- SM.new nnz
         _ <- flip mapM triplets $ \(i, j, v) -> do
-            idx <- fromIntegral <$> SM.read outer' j
-            GM.write val' idx v
-            SM.write inner' idx $ fromIntegral i
-            SM.modify outer' (+1) j
+            idx <- fromIntegral <$> SM.unsafeRead outer' j
+            GM.unsafeWrite val' idx v
+            SM.unsafeWrite inner' idx $ fromIntegral i
+            SM.unsafeModify outer' (+1) j
         (,) <$> G.unsafeFreeze val' <*> S.unsafeFreeze inner'
     nnz = length triplets
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE fromTriplet #-}
 
-{-
-toTriplet :: (G.Vector v1 (Int, Int, a), G.Vector v2 a, SingI r, SingI c)
-          => SparseMatrix r c v2 a -> v1 (Int, Int, a)
-toTriplet mat = 
--}
+-- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
+-- duplicate entries are carried over to the CSR represention
+fromTripletC :: forall m r c v a. (Monad m, G.Vector v a, SingI r, SingI c)
+             => ConduitT () (Int, Int, a) m ()
+             -> m (SparseMatrix r c v a)
+fromTripletC triplets = do
+    (nnz, outer) <- runConduit $ triplets .| zipSinks lengthC sinkOuter
+    (val, inner, _) <- runConduit $ triplets .| sinkValInner nnz (clone outer)
+    return $ SparseMatrix val inner outer
+  where
+    sinkOuter = S.scanl (+) 0 <$> foldlC f (S.replicate c 0)
+      where
+        f vec (_, j, _) = S.modify (\v -> SM.unsafeModify v (+1) j) vec
+    sinkValInner nnz outer0 = foldlC f (val0, inner0, outer0)
+      where
+        val0 = G.create $ GM.new nnz
+        inner0 = S.create $ SM.new nnz
+        f (val, inner, outer) (i, j, v) = (val', inner', outer')
+          where
+            idx = fromIntegral $ outer `S.unsafeIndex` j
+            val' = G.create $ do
+                vec <- G.unsafeThaw val
+                GM.unsafeWrite vec idx v
+                return vec
+            inner' = S.create $ do
+                vec <- S.unsafeThaw inner
+                SM.unsafeWrite vec idx $ fromIntegral i
+                return vec
+            outer' = S.create $ do
+                vec <- S.unsafeThaw outer
+                SM.unsafeModify vec (+1) j
+                return vec
+    c = fromIntegral $ fromSing (sing :: Sing c)
+    clone x = S.create $ S.thaw x
+{-# INLINE fromTripletC #-}
+
+toTriplet :: (Monad m, G.Vector v a, SingI r, SingI c)
+          => SparseMatrix r c v a -> ConduitT i (Int, Int, a) m ()
+toTriplet (SparseMatrix val inner outer) =
+    G.ifoldM_ go (fromIntegral $ G.head outer) outer
+  where
+    go start curC end = do
+        enumFromToC start (end'-1) .| mapC f
+        return end'
+      where
+        end' = fromIntegral end
+        f i = (fromIntegral $ inner `G.unsafeIndex` i, fromIntegral curC - 1, val `G.unsafeIndex` i)
+{-# INLINE toTriplet #-}
 
 -- | O(m*n) Create a rectangular matrix with default values and given diagonal
 diag :: (G.Vector v a, Zero a, SingI n)

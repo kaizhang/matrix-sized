@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 87788c56237f2039d3ebeb46e17473858919e0268331869733a0453291a1e916
+-- hash: 928cba41be370d603b0bd9df5cbb033b672014406ab0c11d7360ada75adf519d
 
 name:           matrix-sized
 version:        0.0.3
@@ -409,6 +409,7 @@ library
       stdc++
   build-depends:
       base >=4.10 && <5
+    , conduit
     , primitive >=0.6.4.0
     , singletons
     , vector >=0.11
@@ -431,6 +432,7 @@ test-suite test
   ghc-options: -Wall -threaded
   build-depends:
       base
+    , conduit
     , data-ordlist
     , ieee754
     , matrix-sized
