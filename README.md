@@ -37,7 +37,7 @@ import Data.Type.Equality
 
 f :: (SingI n, (2 <= n - 2) ~ 'True)
   => Matrix n n Double -> Matrix n n (Complex Double)
-f m = let (d, v) = eigs (sing :: Sing 2) m
+f m = let (d, v) = eigS (sing :: Sing 2) m
       in v @@ S.diag d @@ G.transpose v
 
 main :: IO ()
