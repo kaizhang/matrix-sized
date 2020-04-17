@@ -170,6 +170,14 @@ instance G.Vector v a => C.Matrix Matrix v a where
     flatten (Matrix vec) = vec
     {-# INLINE flatten #-}
 
+    transpose mat@(Matrix vec)
+        | r == 1 || c == 1 = Matrix vec
+        | otherwise = Matrix $ G.generate (r*c) $ \x ->
+            C.unsafeIndex mat $ x `divMod` c
+      where
+       (r, c) = C.dim mat
+    {-# INLINE transpose #-}
+
     thaw (Matrix v) = MMatrix <$> G.thaw v
     {-# INLINE thaw #-}
 

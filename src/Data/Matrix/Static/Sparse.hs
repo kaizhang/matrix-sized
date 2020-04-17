@@ -44,6 +44,7 @@ module Data.Matrix.Static.Sparse
     , diagRect
 
     -- * Conversions
+    , toDense
     , C.flatten
     , C.toList
 
@@ -67,6 +68,7 @@ import Foreign.C.Types
 import Data.Complex
 
 import qualified Data.Matrix.Static.Dense as D
+import qualified Data.Matrix.Static.Dense.Mutable as DM
 import qualified Data.Matrix.Static.Generic as C
 import Data.Matrix.Static.Sparse.Mutable
 
@@ -173,7 +175,27 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
         vec' = runST $ runConduit $ toTriplet mat .| mapC g .| sinkVector
         g (i,j,x) = f (i,j) x
     {-# INLINE imap #-}
+
+    imapM_ f mat@(SparseMatrix _ _ _) = runConduit $ toTriplet mat .| mapM_C g
+      where
+        g (i,j,x) = f (i,j) x >> return ()
+    {-# INLINE imapM_ #-}
+
+    sequence (SparseMatrix vec inner outer) = do
+        vec' <- G.sequence vec
+        return $ SparseMatrix vec' inner outer
+    {-# INLINE sequence #-}
+
+    sequence_ (SparseMatrix vec _ _) = G.sequence_ vec
+    {-# INLINE sequence_ #-}
     
+toDense :: (Zero a, G.Vector v a, SingI r, SingI c)
+        => SparseMatrix r c v a -> D.Matrix r c v a
+toDense mat = D.create $ do
+    m <- DM.replicate zero
+    flip C.imapM_ mat $ \idx -> DM.unsafeWrite m idx
+    return m
+{-# INLINE toDense #-}
 
 -- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
 -- duplicate entries are carried over to the CSR represention

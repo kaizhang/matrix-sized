@@ -89,6 +89,11 @@ tests:
     source-dirs:
       - tests
 
+    other-modules:
+      - Test.Base
+      - Test.LinearAlgebra
+      - Test.Utils
+
     dependencies:
       - base
       - conduit

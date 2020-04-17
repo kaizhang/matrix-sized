@@ -4,10 +4,10 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 928cba41be370d603b0bd9df5cbb033b672014406ab0c11d7360ada75adf519d
+-- hash: a94165a01f28a1a01026b95b46341900f92789d9a5b17aec1fe9ab414b560a26
 
 name:           matrix-sized
-version:        0.0.3
+version:        0.0.4
 synopsis:       Haskell matrix library with interface to C++ linear algebra libraries.
 description:    A Haskell implementation of matrices with statically known sizes. The library also comes with the bindings to high performance C++ linear algebra libraries such as Eigen and Spectra.
 category:       Math
@@ -426,7 +426,6 @@ test-suite test
       Test.Base
       Test.LinearAlgebra
       Test.Utils
-      Paths_matrix_sized
   hs-source-dirs:
       tests
   ghc-options: -Wall -threaded

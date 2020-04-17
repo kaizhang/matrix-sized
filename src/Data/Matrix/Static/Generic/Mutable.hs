@@ -23,6 +23,11 @@ class GM.MVector v a => MMatrix (mat :: MMatrixKind) v a where
 
     unsafeWrite :: PrimMonad s => mat r c v (PrimState s) a -> (Int, Int) -> a -> s ()
 
+    unsafeModify :: PrimMonad s
+                 => mat r c v (PrimState s) a
+                 -> (a -> a)
+                 -> (Int, Int) -> s ()
+
     -- | Create a mutable matrix without initialization
     new :: (SingI r, SingI c, PrimMonad s) => s (mat r c v (PrimState s) a)
 

@@ -18,6 +18,8 @@ module Data.Matrix.Static.LinearAlgebra
     , LinearAlgebra(..)
 
       -- * Dense matrix operation
+    , zeros
+    , ones
     , inverse
     , eig
     , svd
@@ -99,6 +101,24 @@ instance Arithmetic S.SparseMatrix S.SparseMatrix where
 
 class LinearAlgebra (mat :: C.MatrixKind) where
     ident :: (Numeric a, SingI n) => mat n n Vector a
+
+    colSum :: (Numeric a, SingI n, C.Matrix mat Vector a)
+           => mat m n Vector a
+           -> Matrix 1 n a
+    colSum mat = D.create $ do
+        m <- CM.replicate 0
+        flip C.imapM_ mat $ \(_,j) v -> CM.unsafeModify m (+v) (0, j)
+        return m
+    {-# INLINE colSum #-}
+
+    rowSum :: (Numeric a, SingI m, C.Matrix mat Vector a)
+           => mat m n Vector a
+           -> Matrix m 1 a
+    rowSum mat = D.create $ do
+        m <- CM.replicate 0
+        flip C.imapM_ mat $ \(i,_) x -> CM.unsafeModify m (+x) (i, 0)
+        return m
+    {-# INLINE rowSum #-}
 
 instance LinearAlgebra D.Matrix where
     ident = D.diag 0 $ D.replicate 1
@@ -192,6 +212,14 @@ type family R a where
     R Double = Double
     R (Complex Double) = Double
     R (Complex Float) = Float
+
+zeros :: (SingI m, SingI n) => Matrix m n Double
+zeros = D.replicate 0
+{-# INLINE zeros #-}
+
+ones :: (SingI m, SingI n) => Matrix m n Double
+ones = D.replicate 1
+{-# INLINE ones #-}
     
 -- | The inverse of a dense matrix.
 inverse :: (SingI n, Numeric a) => Matrix n n a -> Matrix n n a

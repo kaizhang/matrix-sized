@@ -49,6 +49,12 @@ instance GM.MVector v a => C.MMatrix MMatrix v a where
         idx = i + j * r
     {-# INLINE unsafeWrite #-}
 
+    unsafeModify mat@(MMatrix v) f (i,j) = GM.unsafeModify v f idx
+      where 
+        (r, _) = C.dim mat
+        idx = i + j * r
+    {-# INLINE unsafeModify #-}
+
     new :: forall r c s. (SingI r, SingI c, PrimMonad s)
         => s (MMatrix r c v (PrimState s) a)
     new = MMatrix <$> GM.new (r*c)

@@ -16,7 +16,6 @@ module Data.Matrix.Static.LinearAlgebra.Internal
     , unsafeWithS
     ) where
 
-import Data.Vector.Storable (Storable)
 import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Storable.Mutable as VSM
 import System.IO.Unsafe (unsafePerformIO)

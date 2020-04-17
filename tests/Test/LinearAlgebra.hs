@@ -18,6 +18,7 @@ import Data.Singletons hiding ((@@))
 import Data.Singletons.Prelude (Min)
 import Data.Complex
 import Data.Vector.Storable (Storable)
+import qualified Data.Vector.Storable as V
 import GHC.TypeNats (KnownNat)
 import Control.Monad.IO.Class (liftIO)
 import Test.Tasty.QuickCheck
@@ -26,10 +27,28 @@ import Test.Utils
 
 linearAlgebra :: TestTree
 linearAlgebra = testGroup "Linear algebra"
-    [ svdTest
+    [ basicTest
+    , svdTest
     , eigenTest
     ]
 
+basicTest :: TestTree
+basicTest = testGroup "Basic"
+    [ testProperty "Row sum (Dense)" drs
+    , testProperty "Column sum (Dense)" dcs
+    , testProperty "Row sum (Sparse)" srs
+    , testProperty "Column sum (Sparse)" scs ]
+  where
+    drs :: Matrix 50 30 Double -> Bool
+    drs m = D.toList (rowSum m) == map V.sum (G.toRows m)
+    dcs :: Matrix 50 30 Double -> Bool
+    dcs m = D.toList (colSum m) == map V.sum (G.toColumns m)
+    srs :: SparseMatrix 50 30 Double -> Bool
+    srs m = D.toList (rowSum m) == map V.sum (G.toRows m)
+    scs :: SparseMatrix 50 30 Double -> Bool
+    scs m = D.toList (colSum m) == map V.sum (G.toColumns m)
+
+svdTest :: TestTree
 svdTest = testGroup "SVD"
     [ testProperty "SVD (Float)" svd1
     , testProperty "SVD (Double)" svd2
@@ -46,6 +65,7 @@ svdTest = testGroup "SVD"
         m' = u @@ S.diag d @@ D.transpose v
         (u,d,v) = svd m
 
+eigenTest :: TestTree
 eigenTest = testGroup "Eigendecomposition"
     [ testProperty "Full" eigen1
     , testProperty "Partial dense" eigen2
@@ -73,11 +93,3 @@ eigenTest = testGroup "Eigendecomposition"
       where
         m = raw %+% D.transpose raw
         (d, v)= eigSH (sing :: Sing 99) m
-
-
-
-{-
-propTranspose :: Matrix 50 100 Double -> Bool
-propTranspose m = D.transpose (D.transpose m) == m && 
-    D.convertAny (S.transpose $ S.transpose (D.convertAny m)) == m
--}
