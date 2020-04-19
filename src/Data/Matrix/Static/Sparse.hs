@@ -52,6 +52,7 @@ module Data.Matrix.Static.Sparse
     , C.convertAny
    ) where
 
+import qualified Data.Vector as V
 import qualified Data.Vector.Generic as G
 import qualified Data.Vector.Generic.Mutable as GM
 import qualified Data.Vector.Storable as S
@@ -144,7 +145,7 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
            => v a -> SparseMatrix r c v a
     unsafeFromVector vec = fromTriplet vec'
       where
-        vec' = map (\((a,b),c) -> (a,b,c)) $ filter ((/=zero) . snd) $
+        vec' = V.fromList $ map (\((a,b),c) -> (a,b,c)) $ filter ((/=zero) . snd) $
             zipWith (\i x -> (toIndex i, x)) [0..] $ G.toList vec
         toIndex i = swap $ i `divMod` r
         r = fromIntegral $ fromSing (sing :: Sing r)
@@ -199,26 +200,26 @@ toDense mat = D.create $ do
 
 -- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
 -- duplicate entries are carried over to the CSR represention
-fromTriplet :: forall t r c v a. (Traversable t, G.Vector v a, SingI r, SingI c)
-            => t (Int, Int, a) -> SparseMatrix r c v a
+fromTriplet :: forall u r c v a. (G.Vector u (Int, Int, a), G.Vector v a, SingI r, SingI c)
+            => u (Int, Int, a) -> SparseMatrix r c v a
 fromTriplet triplets = SparseMatrix val inner outer
   where
     outer = S.scanl (+) 0 $ S.create $ do
         vec <- SM.replicate c 0
-        _ <- flip mapM triplets $ \(_, j, _) -> 
+        G.forM_ triplets $ \(_, j, _) -> 
             SM.unsafeModify vec (+1) j
         return vec
     (val, inner) = runST $ do
         outer' <- S.thaw outer
         val' <- GM.new nnz
         inner' <- SM.new nnz
-        _ <- flip mapM triplets $ \(i, j, v) -> do
+        G.forM_ triplets $ \(i, j, v) -> do
             idx <- fromIntegral <$> SM.unsafeRead outer' j
             GM.unsafeWrite val' idx v
             SM.unsafeWrite inner' idx $ fromIntegral i
             SM.unsafeModify outer' (+1) j
         (,) <$> G.unsafeFreeze val' <*> S.unsafeFreeze inner'
-    nnz = length triplets
+    nnz = G.length triplets
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE fromTriplet #-}
 

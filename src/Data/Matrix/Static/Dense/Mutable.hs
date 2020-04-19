@@ -55,6 +55,9 @@ instance GM.MVector v a => C.MMatrix MMatrix v a where
         idx = i + j * r
     {-# INLINE unsafeModify #-}
 
+    fill (MMatrix v) x = GM.set v x
+    {-# INLINE fill #-}
+
     new :: forall r c s. (SingI r, SingI c, PrimMonad s)
         => s (MMatrix r c v (PrimState s) a)
     new = MMatrix <$> GM.new (r*c)

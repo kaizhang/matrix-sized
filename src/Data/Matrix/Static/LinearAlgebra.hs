@@ -102,23 +102,23 @@ instance Arithmetic S.SparseMatrix S.SparseMatrix where
 class LinearAlgebra (mat :: C.MatrixKind) where
     ident :: (Numeric a, SingI n) => mat n n Vector a
 
-    colSum :: (Numeric a, SingI n, C.Matrix mat Vector a)
+    rowSum :: (Numeric a, SingI n, C.Matrix mat Vector a)
            => mat m n Vector a
            -> Matrix 1 n a
-    colSum mat = D.create $ do
+    rowSum mat = D.create $ do
         m <- CM.replicate 0
         flip C.imapM_ mat $ \(_,j) v -> CM.unsafeModify m (+v) (0, j)
         return m
-    {-# INLINE colSum #-}
+    {-# INLINE rowSum #-}
 
-    rowSum :: (Numeric a, SingI m, C.Matrix mat Vector a)
+    colSum :: (Numeric a, SingI m, C.Matrix mat Vector a)
            => mat m n Vector a
            -> Matrix m 1 a
-    rowSum mat = D.create $ do
+    colSum mat = D.create $ do
         m <- CM.replicate 0
         flip C.imapM_ mat $ \(i,_) x -> CM.unsafeModify m (+x) (i, 0)
         return m
-    {-# INLINE rowSum #-}
+    {-# INLINE colSum #-}
 
 instance LinearAlgebra D.Matrix where
     ident = D.diag 0 $ D.replicate 1

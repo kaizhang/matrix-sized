@@ -5,6 +5,7 @@
 module Data.Matrix.Static.Generic.Mutable
     ( MMatrix(..)
     , MMatrixKind
+    , fillDiagonal
     ) where
 
 import           Control.Monad.Primitive     (PrimMonad, PrimState)
@@ -28,12 +29,21 @@ class GM.MVector v a => MMatrix (mat :: MMatrixKind) v a where
                  -> (a -> a)
                  -> (Int, Int) -> s ()
 
+    fill :: PrimMonad s => mat r c v (PrimState s) a -> a -> s ()
+
     -- | Create a mutable matrix without initialization
     new :: (SingI r, SingI c, PrimMonad s) => s (mat r c v (PrimState s) a)
 
     replicate :: (SingI r, SingI c, PrimMonad s) => a -> s (mat r c v (PrimState s) a)
 
-    {-# MINIMAL dim, unsafeRead, unsafeWrite, new, replicate #-}
+fillDiagonal :: (PrimMonad s, MMatrix mat v a)
+             => mat r c v (PrimState s) a -> a -> s ()
+fillDiagonal mat x = mapM_ (\i -> unsafeWrite mat (i,i) x) [0..n]
+  where
+    n = min r c - 1
+    (r,c) = dim mat
+{-# INLINE fillDiagonal #-}
+
 
 {-
 write :: (PrimMonad s, MMatrix m v a)
