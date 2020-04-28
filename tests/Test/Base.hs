@@ -20,6 +20,7 @@ import qualified Data.Vector as V
 import Control.Monad.IO.Class (liftIO)
 import Test.Tasty.QuickCheck
 import Conduit
+import Data.Store
 
 import Test.Utils
 
@@ -27,14 +28,23 @@ base :: TestTree
 base = testGroup "Base"
     [ pConversion
     , pTranspose
+    , pSerialization
     ]
 
+pSerialization :: TestTree
+pSerialization = testGroup "Serialization"
+    [ testProperty "Sparse: id == decode . encode" tStore ]
+  where
+    tStore :: S.SparseMatrix 80 60 Vector Double -> Bool
+    tStore mat = mat == decodeEx (encode mat)
+
+pConversion :: TestTree
 pConversion = testGroup "Conversion"
-    [ testProperty "Dense: fromVector . flatten" t1
-    , testProperty "Sparse: fromVector . flatten" t2
-    , testProperty "Sparse -- fromTriplet . toTriplet" tTri
-    , testProperty "Sparse -- fromTripletC . toTriplet" tTriC
-    , testProperty "Sparse -- fromColumn . toColumn" tCol
+    [ testProperty "Dense: id == fromVector . flatten" t1
+    , testProperty "Sparse: id == fromVector . flatten" t2
+    , testProperty "Sparse -- id == fromTriplet . toTriplet" tTri
+    , testProperty "Sparse -- id == fromTripletC . toTriplet" tTriC
+    , testProperty "Sparse -- id == fromColumn . toColumn" tCol
     , testProperty "Sparse -- dense" t3 ]
   where
     t1 :: D.Matrix 80 60 Vector Int -> Bool
@@ -54,6 +64,7 @@ pConversion = testGroup "Conversion"
     tCol :: S.SparseMatrix 80 60 Vector Int -> Bool
     tCol mat = mat == G.fromColumns (map (G.unsafeTakeColumn mat) [0..G.cols mat -1])
 
+pTranspose :: TestTree
 pTranspose = testGroup "Transpose"
     [ testProperty "Dense" t1
     , testProperty "Sparse" tSp

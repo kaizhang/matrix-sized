@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a94165a01f28a1a01026b95b46341900f92789d9a5b17aec1fe9ab414b560a26
+-- hash: 6a798424e1a0009aa98ffffd072f359a709f32f2de6f58a23bdbe9296eeb9547
 
 name:           matrix-sized
 version:        0.0.4
@@ -412,6 +412,7 @@ library
     , conduit
     , primitive >=0.6.4.0
     , singletons
+    , store
     , vector >=0.11
   if flag(parallel)
     cc-options: -fopenmp
@@ -435,9 +436,9 @@ test-suite test
     , data-ordlist
     , ieee754
     , matrix-sized
-    , primitive >=0.6.4.0
     , singletons
+    , store
     , tasty
     , tasty-quickcheck
-    , vector >=0.11
+    , vector
   default-language: Haskell2010

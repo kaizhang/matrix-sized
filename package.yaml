@@ -29,13 +29,6 @@ extra-source-files:
   - README.md
   - ChangeLog.md
 
-dependencies:
-  - base >= 4.10 && < 5
-  - conduit
-  - primitive >= 0.6.4.0
-  - singletons
-  - vector >= 0.11
-
 flags:
   parallel:
     description: Enable multithreading
@@ -58,6 +51,14 @@ library:
   other-modules: 
     - Data.Matrix.Static.Internal
     - Data.Matrix.Static.LinearAlgebra.Internal
+
+  dependencies:
+    - base >= 4.10 && < 5
+    - conduit
+    - primitive >= 0.6.4.0
+    - singletons
+    - vector >= 0.11
+    - store
 
   include-dirs:
     - eigen3
@@ -98,11 +99,13 @@ tests:
       - base
       - conduit
       - data-ordlist
+      - store
       - matrix-sized
       - ieee754
       - singletons
       - tasty
       - tasty-quickcheck
+      - vector
 
     #ld-options: "-fopenmp"
 

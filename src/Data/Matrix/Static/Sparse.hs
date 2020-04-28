@@ -68,6 +68,8 @@ import Data.Tuple (swap)
 import GHC.TypeLits (type (<=))
 import Foreign.C.Types
 import Data.Complex
+import Data.Store (Store(..), Size(..))
+import Foreign.Storable (sizeOf)
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -111,6 +113,27 @@ data SparseMatrix :: C.MatrixKind where
                                      -- (resp. row) the index of the first
                                      -- non-zero in the previous two arrays.
                  -> SparseMatrix r c v a
+
+instance (G.Vector v a, Zero a, Store (v a), SingI r, SingI c) =>
+    Store (SparseMatrix r c v a) where
+        size = VarSize $ \(SparseMatrix nnz inner outer) ->
+            case (size, size) of
+                (VarSize f, VarSize g) ->
+                    2 * sizeOf (0 :: Int) + f nnz + g inner + g outer
+
+        poke mat@(SparseMatrix nnz inner outer) = poke r >> poke c >> poke nnz >>
+            poke inner >> poke outer
+          where
+            (r,c) = C.dim mat
+        peek = do
+            r' <- peek
+            c' <- peek
+            if r' /= r || c' /= c
+                then error $ "Dimensions donot match: " <> show (r,c) <> " /= " <> show (r',c')
+                else SparseMatrix <$> peek <*> peek <*> peek
+          where
+            r = fromIntegral $ fromSing (sing :: Sing r) :: Int
+            c = fromIntegral $ fromSing (sing :: Sing c) :: Int
 
 instance (G.Vector v a, Eq (v a)) => Eq (SparseMatrix r c v a) where
     (==) (SparseMatrix a b c) (SparseMatrix a' b' c') =
