@@ -30,9 +30,10 @@ import qualified Data.Vector.Storable as VS
 import Data.Vector.Storable (Vector)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Complex (Complex)
-import Data.Singletons.Prelude hiding ((@@), type (==))
+import Data.Singletons.Prelude hiding ((@@), type (==), type (-), type (<=))
 import Data.Type.Bool (If)
-import Data.Type.Equality (type (==))
+import Data.Type.Equality
+import GHC.TypeLits
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Sparse as S
@@ -102,23 +103,23 @@ instance Arithmetic S.SparseMatrix S.SparseMatrix where
 class LinearAlgebra (mat :: C.MatrixKind) where
     ident :: (Numeric a, SingI n) => mat n n Vector a
 
-    rowSum :: (Numeric a, SingI n, C.Matrix mat Vector a)
+    colSum :: (Numeric a, SingI n, C.Matrix mat Vector a)
            => mat m n Vector a
            -> Matrix 1 n a
-    rowSum mat = D.create $ do
+    colSum mat = D.create $ do
         m <- CM.replicate 0
         flip C.imapM_ mat $ \(_,j) v -> CM.unsafeModify m (+v) (0, j)
         return m
-    {-# INLINE rowSum #-}
+    {-# INLINE colSum #-}
 
-    colSum :: (Numeric a, SingI m, C.Matrix mat Vector a)
+    rowSum :: (Numeric a, SingI m, C.Matrix mat Vector a)
            => mat m n Vector a
            -> Matrix m 1 a
-    colSum mat = D.create $ do
+    rowSum mat = D.create $ do
         m <- CM.replicate 0
         flip C.imapM_ mat $ \(i,_) x -> CM.unsafeModify m (+x) (i, 0)
         return m
-    {-# INLINE colSum #-}
+    {-# INLINE rowSum #-}
 
 instance LinearAlgebra D.Matrix where
     ident = D.diag 0 $ D.replicate 1
@@ -129,14 +130,14 @@ instance LinearAlgebra S.SparseMatrix where
 class Factorization mat where
     -- | Eigenvalues (from largest to smallest) and
     -- eigenvectors (as columns) of a general square matrix.
-    eigS :: (SingI k, SingI n, (k <= n - 2) ~ 'True)
+    eigS :: (SingI k, SingI n, k <= n - 2)
          => Sing k
          -> mat n n Vector Double
          -> (Matrix k 1 (Complex Double), Matrix n k (Complex Double))
 
     -- | Eigenvalues (from largest to smallest) and
     -- eigenvectors (as columns) of a symmetric square matrix.
-    eigSH :: (SingI k, SingI n, (k <= n - 1) ~ 'True)
+    eigSH :: (SingI k, SingI n, k <= n - 1)
           => Sing k
           -> mat n n Vector Double
           -> (Matrix k 1 Double, Matrix n k Double)

@@ -31,6 +31,7 @@ module Data.Matrix.Static.Sparse
     , C.unsafeIndex
     , C.unsafeTakeRow
     , C.unsafeTakeColumn
+    , unsafeStreamColumn
 
     -- * Construction
     , C.empty
@@ -140,6 +141,13 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
         r1 = fromIntegral $ outer `S.unsafeIndex` (j+1) - 1
     {-# INLINE unsafeIndex #-}
 
+    unsafeTakeColumn mat i = G.create $ do
+        vec <- GM.replicate (C.rows mat) zero
+        let f (r,_,v) = GM.unsafeWrite vec r v
+        runConduit $ unsafeStreamColumn mat i .| mapM_C f
+        return vec
+    {-# INLINE unsafeTakeColumn #-}
+
     -- | O(1) Create matrix from vector containing columns.
     unsafeFromVector :: forall r c. (G.Vector v a, SingI r, SingI c)
            => v a -> SparseMatrix r c v a
@@ -197,6 +205,15 @@ toDense mat = D.create $ do
     flip C.imapM_ mat $ \idx -> DM.unsafeWrite m idx
     return m
 {-# INLINE toDense #-}
+
+unsafeStreamColumn :: (Monad m, G.Vector v a)
+                   => SparseMatrix r c v a -> Int -> ConduitT i (Int, Int, a) m ()
+unsafeStreamColumn (SparseMatrix nnz inner outer) i = enumFromToC lo hi .| mapC f
+  where
+    f idx = (fromIntegral $ inner `S.unsafeIndex` idx, i, nnz `G.unsafeIndex` idx)
+    lo = fromIntegral $ outer S.! i
+    hi = fromIntegral $ outer S.! (i+1) - 1
+{-# INLINE unsafeStreamColumn #-}
 
 -- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
 -- duplicate entries are carried over to the CSR represention

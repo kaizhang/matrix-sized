@@ -17,6 +17,7 @@ import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Sparse as S
 import Data.Vector.Storable (Storable)
 import Data.List.Ordered
+import qualified Data.Vector as V
 import Data.Ord
 import qualified Data.Vector.Generic as G
 import Data.AEq
@@ -57,7 +58,7 @@ instance (G.Vector v a, Arbitrary a, SingI m, SingI n, S.Zero a)
                 i <- choose (0, m-1)
                 j <- choose (0, n-1)
                 return ((i,j),v)
-            return $ S.fromTriplet $ map (\((a,b),c) -> (a,b,c)) xs
+            return $ S.fromTriplet $ V.fromList $ map (\((a,b),c) -> (a,b,c)) xs
           where
             p = (m * n) `div` 10
             m = fromIntegral $ fromSing (sing :: Sing m)

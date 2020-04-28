@@ -16,6 +16,7 @@ import qualified Data.Matrix.Static.Sparse as S
 import Data.Singletons hiding ((@@))
 import Data.Singletons.Prelude (Min)
 import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Control.Monad.IO.Class (liftIO)
 import Test.Tasty.QuickCheck
 import Conduit
@@ -33,6 +34,7 @@ pConversion = testGroup "Conversion"
     , testProperty "Sparse: fromVector . flatten" t2
     , testProperty "Sparse -- fromTriplet . toTriplet" tTri
     , testProperty "Sparse -- fromTripletC . toTriplet" tTriC
+    , testProperty "Sparse -- fromColumn . toColumn" tCol
     , testProperty "Sparse -- dense" t3 ]
   where
     t1 :: D.Matrix 80 60 Vector Int -> Bool
@@ -46,9 +48,11 @@ pConversion = testGroup "Conversion"
     tTri :: S.SparseMatrix 80 60 Vector Int -> Bool
     tTri mat = S.fromTriplet xs == mat
       where
-        xs = runIdentity $ runConduit $ S.toTriplet mat .| sinkList
+        xs = V.fromList $ runIdentity $ runConduit $ S.toTriplet mat .| sinkList
     tTriC :: S.SparseMatrix 80 60 Vector Int -> Bool
     tTriC mat = mat == runIdentity (S.fromTripletC (S.toTriplet mat))
+    tCol :: S.SparseMatrix 80 60 Vector Int -> Bool
+    tCol mat = mat == G.fromColumns (map (G.unsafeTakeColumn mat) [0..G.cols mat -1])
 
 pTranspose = testGroup "Transpose"
     [ testProperty "Dense" t1
