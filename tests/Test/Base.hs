@@ -33,10 +33,16 @@ base = testGroup "Base"
 
 pSerialization :: TestTree
 pSerialization = testGroup "Serialization"
-    [ testProperty "Sparse: id == decode . encode" tStore ]
+    [ testProperty "Dense: id == decode . encode" tStoreD
+    , testProperty "Sparse: id == decode . encode" tStoreS
+    , testProperty "Sparse: id == decode . encode" tStoreS' ]
   where
-    tStore :: S.SparseMatrix 80 60 Vector Double -> Bool
-    tStore mat = mat == decodeEx (encode mat)
+    tStoreD :: D.Matrix 80 60 Vector Double -> Bool
+    tStoreD mat = mat == decodeEx (encode mat)
+    tStoreS :: S.SparseMatrix 80 60 Vector Double -> Bool
+    tStoreS mat = mat == decodeEx (encode mat)
+    tStoreS' :: S.SparseMatrix 80 60 Vector Double -> Bool
+    tStoreS' mat = G.flatten mat == S.withDecodedMatrix (encode mat) G.flatten
 
 pConversion :: TestTree
 pConversion = testGroup "Conversion"

@@ -105,6 +105,8 @@ import Data.Singletons
 import Data.Tuple (swap)
 import qualified Data.List as L
 import Text.Printf (printf)
+import Data.Store (Store(..), Size(..), decodeExWith)
+import Foreign.Storable (sizeOf)
 
 import           Data.Matrix.Static.Dense.Mutable (MMatrix (..))
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -115,6 +117,25 @@ type instance C.Mutable Matrix = MMatrix
 -- | Column-major matrix
 data Matrix :: C.MatrixKind where
     Matrix :: (SingI r, SingI c) => v a -> Matrix r c v a
+
+instance (G.Vector v a, Store (v a), SingI r, SingI c) =>
+    Store (Matrix r c v a) where
+        size = VarSize $ \(Matrix vec) -> case size of
+            VarSize f  ->
+                2 * sizeOf (0 :: Int) + f vec
+
+        poke mat@(Matrix vec) = poke r >> poke c >> poke vec
+          where
+            (r,c) = C.dim mat
+        peek = do
+            r' <- peek
+            c' <- peek
+            if r' /= r || c' /= c
+                then error $ "Dimensions donot match: " <> show (r,c) <> " /= " <> show (r',c')
+                else Matrix <$> peek
+          where
+            r = fromIntegral $ fromSing (sing :: Sing r) :: Int
+            c = fromIntegral $ fromSing (sing :: Sing c) :: Int
 
 instance (G.Vector v a, Show a) => Show (Matrix r c v a) where
     show mat = printf "(%d x %d)\n%s" r c vals

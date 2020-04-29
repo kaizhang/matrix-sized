@@ -38,6 +38,7 @@ module Data.Matrix.Static.Sparse
     , fromTriplet
     , fromTripletC
     , toTriplet
+    , withDecodedMatrix
     , C.fromVector
     , C.fromList
     , C.unsafeFromVector
@@ -68,8 +69,10 @@ import Data.Tuple (swap)
 import GHC.TypeLits (type (<=))
 import Foreign.C.Types
 import Data.Complex
-import Data.Store (Store(..), Size(..))
+import Data.Store (Store(..), Size(..), decodeExWith)
 import Foreign.Storable (sizeOf)
+import Data.ByteString (ByteString)
+import Data.Singletons.TypeLits
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -134,6 +137,17 @@ instance (G.Vector v a, Zero a, Store (v a), SingI r, SingI c) =>
           where
             r = fromIntegral $ fromSing (sing :: Sing r) :: Int
             c = fromIntegral $ fromSing (sing :: Sing c) :: Int
+
+withDecodedMatrix :: forall v a b. (G.Vector v a, Store (v a))
+                  => ByteString -> (forall r c. SparseMatrix r c v a -> b) -> b
+withDecodedMatrix bs f = withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
+    withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
+        f (SparseMatrix nnz inner outer :: SparseMatrix r c v a)
+  where
+    (r,c,nnz,inner,outer) = decodeExWith 
+        ((,,,,) <$> peek <*> peek <*> peek <*> peek <*> peek)
+        bs
+{-# INLINE withDecodedMatrix #-}
 
 instance (G.Vector v a, Eq (v a)) => Eq (SparseMatrix r c v a) where
     (==) (SparseMatrix a b c) (SparseMatrix a' b' c') =
@@ -220,7 +234,7 @@ instance (G.Vector v a, Zero a) => C.Matrix SparseMatrix v a where
 
     sequence_ (SparseMatrix vec _ _) = G.sequence_ vec
     {-# INLINE sequence_ #-}
-    
+
 toDense :: (Zero a, G.Vector v a, SingI r, SingI c)
         => SparseMatrix r c v a -> D.Matrix r c v a
 toDense mat = D.create $ do
@@ -263,8 +277,10 @@ fromTriplet triplets = SparseMatrix val inner outer
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE fromTriplet #-}
 
--- | O(n) Create matrix from triplet. row and column indices *are not* assumed to be ordered
--- duplicate entries are carried over to the CSR represention
+-- | O(n) Create matrix from triplet. Row and column indices *are not* assumed
+-- to be ordered. Duplicate entries are carried over to the CSR represention.
+-- NOTE: The Conduit will be consumed twice. Use `fromTriplet` if generating
+-- the Conduit is expensive.
 fromTripletC :: forall m r c v a. (Monad m, G.Vector v a, SingI r, SingI c)
              => ConduitT () (Int, Int, a) m ()
              -> m (SparseMatrix r c v a)
@@ -340,7 +356,6 @@ binarySearchByBounds vec x = loop
         k = (u+l) `shiftR` 1
         x' = vec `S.unsafeIndex` k
 {-# INLINE binarySearchByBounds #-}
-
 
 -------------------------------------------------------------------------------
 -- Helper

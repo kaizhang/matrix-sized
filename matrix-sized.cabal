@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6a798424e1a0009aa98ffffd072f359a709f32f2de6f58a23bdbe9296eeb9547
+-- hash: e015ba165566ef673a316d3d428184e2efe5f2c52d1a87a8d201f35f9c8a49ca
 
 name:           matrix-sized
 version:        0.0.4
@@ -390,6 +390,7 @@ library
       Data.Matrix.Static.LinearAlgebra.Types
       Data.Matrix.Static.Generic
       Data.Matrix.Static.Generic.Mutable
+      Data.Matrix.Static.IO
   other-modules:
       Data.Matrix.Static.Internal
       Data.Matrix.Static.LinearAlgebra.Internal
@@ -409,7 +410,10 @@ library
       stdc++
   build-depends:
       base >=4.10 && <5
+    , bytestring
+    , bytestring-lexing
     , conduit
+    , conduit-extra
     , primitive >=0.6.4.0
     , singletons
     , store

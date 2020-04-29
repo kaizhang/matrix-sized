@@ -47,6 +47,7 @@ library:
     - Data.Matrix.Static.LinearAlgebra.Types
     - Data.Matrix.Static.Generic
     - Data.Matrix.Static.Generic.Mutable
+    - Data.Matrix.Static.IO
 
   other-modules: 
     - Data.Matrix.Static.Internal
@@ -54,6 +55,9 @@ library:
 
   dependencies:
     - base >= 4.10 && < 5
+    - bytestring
+    - bytestring-lexing
+    - conduit-extra
     - conduit
     - primitive >= 0.6.4.0
     - singletons
