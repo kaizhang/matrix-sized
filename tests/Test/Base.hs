@@ -51,6 +51,7 @@ pConversion = testGroup "Conversion"
     , testProperty "Sparse -- id == fromTriplet . toTriplet" tTri
     , testProperty "Sparse -- id == fromTripletC . toTriplet" tTriC
     , testProperty "Sparse -- id == fromColumn . toColumn" tCol
+    , testProperty "Sparse -- toTripletC == mapM_ takeColumnC" tCol'
     , testProperty "Sparse -- dense" t3 ]
   where
     t1 :: D.Matrix 80 60 Vector Int -> Bool
@@ -69,6 +70,12 @@ pConversion = testGroup "Conversion"
     tTriC mat = mat == runIdentity (S.fromTripletC (S.toTriplet mat))
     tCol :: S.SparseMatrix 80 60 Vector Int -> Bool
     tCol mat = mat == G.fromColumns (map (G.unsafeTakeColumn mat) [0..G.cols mat -1])
+    tCol' :: S.SparseMatrix 80 60 Vector Int -> Bool
+    tCol' mat = a == b
+      where
+        a = runIdentity $ runConduit $
+            mapM_ (S.unsafeTakeColumnC mat) [0..G.cols mat -1] .| sinkList
+        b = runIdentity $ runConduit $ S.toTriplet mat .| sinkList
 
 pTranspose :: TestTree
 pTranspose = testGroup "Transpose"
