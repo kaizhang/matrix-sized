@@ -6,10 +6,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE GADTs #-}
 module Data.Matrix.Static.Generic
     ( Mutable
     , Matrix(..)
     , MatrixKind
+    , Dynamic(..)
 
     -- * Derived mothods
     , rows
@@ -50,6 +52,9 @@ import Data.Singletons.TypeLits
 import Data.Matrix.Static.Generic.Mutable (MMatrix, MMatrixKind)
 
 type MatrixKind = Nat -> Nat -> (Type -> Type) -> Type -> Type
+
+data Dynamic (m :: MatrixKind) (v :: Type -> Type) a =
+    forall r c. Dynamic {_unwrap :: m r c v a}
 
 type family Mutable (mat :: MatrixKind) = (mmat :: MMatrixKind) | mmat -> mat
 
