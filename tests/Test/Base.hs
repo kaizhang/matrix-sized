@@ -13,11 +13,11 @@ import Test.Tasty
 import qualified Data.Matrix.Static.Generic as G
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Sparse as S
+import Control.Monad.ST (runST)
+import Data.Matrix.Static.IO
 import Data.Singletons hiding ((@@))
-import Data.Singletons.Prelude (Min)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Control.Monad.IO.Class (liftIO)
 import Test.Tasty.QuickCheck
 import Conduit
 import Data.Store
@@ -35,7 +35,8 @@ pSerialization :: TestTree
 pSerialization = testGroup "Serialization"
     [ testProperty "Dense: id == decode . encode" tStoreD
     , testProperty "Sparse: id == decode . encode" tStoreS
-    , testProperty "Sparse: id == decode . encode" tStoreS' ]
+    , testProperty "Sparse: id == decode . encode" tStoreS'
+    , testProperty "Sparse: id ~= fromMM . toMM" tMM ]
   where
     tStoreD :: D.Matrix 80 60 Vector Double -> Bool
     tStoreD mat = mat == decodeEx (encode mat)
@@ -43,6 +44,8 @@ pSerialization = testGroup "Serialization"
     tStoreS mat = mat == decodeEx (encode mat)
     tStoreS' :: S.SparseMatrix 80 60 Vector Double -> Bool
     tStoreS' mat = G.flatten mat == S.withDecodedMatrix (encode mat) G.flatten
+    tMM :: S.SparseMatrix 80 60 Vector Double -> Bool
+    tMM mat = S.toDense (runST (runConduit $ toMM mat .| fromMM)) ~= S.toDense mat
 
 pConversion :: TestTree
 pConversion = testGroup "Conversion"

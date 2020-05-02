@@ -39,8 +39,9 @@ instance Approx (Complex Double) where
         (r1, i1) = polar a
         (r2, i2) = polar b
 
-instance (SingI m, SingI n, Storable a, Approx a) => Approx (Matrix m n a) where
-    m1 ~= m2 = D.all id $ D.zipWith (~=) m1 m2
+instance (SingI m, SingI n, G.Vector v Bool, G.Vector v a, Approx a) =>
+    Approx (D.Matrix m n v a) where
+        m1 ~= m2 = D.all id $ D.zipWith (~=) m1 m2
 
 instance (G.Vector v a, Arbitrary a, SingI m, SingI n)
     => Arbitrary (D.Matrix m n v a) where

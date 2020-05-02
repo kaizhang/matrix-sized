@@ -16,6 +16,7 @@
 module Data.Matrix.Static.IO
     ( fromMM
     , fromMM'
+    , toMM
     , IOElement(..)
     ) where
 
@@ -30,6 +31,8 @@ import           Data.ByteString.Lex.Integral   (readDecimal, readDecimal_)
 import Data.Singletons
 import Data.Maybe
 import Data.Singletons.TypeLits
+import Data.Double.Conversion.ByteString (toShortest)
+import Text.Printf (printf)
 
 import qualified Data.Matrix.Static.Sparse as S
 
@@ -41,18 +44,21 @@ data MMElem = MMReal
 
 class U.Unbox a => IOElement a where
     decodeElem :: B.ByteString -> a
+    encodeElem :: a -> B.ByteString
     elemType :: Proxy a -> MMElem
 
 instance IOElement Int where
     decodeElem x = fst . fromMaybe errMsg . readSigned readDecimal $ x
       where
         errMsg = error $ "readInt: Fail to cast ByteString to Int:" ++ show x
+    encodeElem = B.pack . show
     elemType _ = MMInteger
 
 instance IOElement Double where
     decodeElem x = fst . fromMaybe errMsg . readSigned readExponential $ x
       where
         errMsg = error $ "readDouble: Fail to cast ByteString to Double:" ++ show x
+    encodeElem = toShortest
     elemType _ = MMReal
 
 fromMM' :: forall o m v a. (PrimMonad m, G.Vector v a, IOElement a)
@@ -85,6 +91,22 @@ fromMM = linesUnboundedAsciiC .| do
   where
     nrow = fromIntegral $ fromSing (sing :: Sing r) :: Int
     ncol = fromIntegral $ fromSing (sing :: Sing c) :: Int
+
+toMM :: forall m r c v a i. (Monad m, S.Zero a, IOElement a, G.Vector v a)
+     => S.SparseMatrix r c v a -> ConduitT i B.ByteString m ()
+toMM mat@(S.SparseMatrix vec _ _) = ( do
+    yield header
+    yield "%"
+    yield $ B.pack $ printf "%d %d %d" r c n
+    S.toTriplet mat .| mapC f ) .| unlinesAsciiC
+  where
+    f (i, j, x) = B.unwords [B.pack $ show (i+1), B.pack $ show (j+1), encodeElem x]
+    header = case elemType (Proxy :: Proxy a) of
+        MMReal -> "%%MatrixMarket matrix coordinate real general"
+        MMInteger -> "%%MatrixMarket matrix coordinate integer general"
+        _ -> undefined
+    (r, c) = S.dim mat
+    n = G.length vec
 
 parseHeader :: Monad m => ConduitT B.ByteString o m (MMElem, (Int, Int, Int))
 parseHeader = do
