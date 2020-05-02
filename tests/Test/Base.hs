@@ -13,6 +13,7 @@ import Test.Tasty
 import qualified Data.Matrix.Static.Generic as G
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Sparse as S
+import qualified Data.Matrix.Dynamic as Dyn
 import Control.Monad.ST (runST)
 import Data.Matrix.Static.IO
 import Data.Singletons hiding ((@@))
@@ -43,7 +44,8 @@ pSerialization = testGroup "Serialization"
     tStoreS :: S.SparseMatrix 80 60 Vector Double -> Bool
     tStoreS mat = mat == decodeEx (encode mat)
     tStoreS' :: S.SparseMatrix 80 60 Vector Double -> Bool
-    tStoreS' mat = G.flatten mat == S.withDecodedMatrix (encode mat) G.flatten
+    tStoreS' mat = G.flatten mat ==
+        Dyn.withDyn (Dyn.decodeSparse $ encode mat) G.flatten
     tMM :: S.SparseMatrix 80 60 Vector Double -> Bool
     tMM mat = S.toDense (runST (runConduit $ toMM mat .| fromMM)) ~= S.toDense mat
 

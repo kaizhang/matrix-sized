@@ -6,14 +6,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GADTs #-}
 module Data.Matrix.Static.Generic
     ( Mutable
     , Matrix(..)
     , MatrixKind
-    , Dynamic(..)
 
-    -- * Derived mothods
+    -- * Matrix query
     , rows
     , cols
     , (!)
@@ -21,15 +19,15 @@ module Data.Matrix.Static.Generic
     , takeRow
     , toRows
     , toColumns
+
+    -- * Matrix Construction
     , empty
     , matrix
-    , withMatrix
     , fromRows
-    , withRows
     , fromColumns
-    , withColumns
     , fromVector
     , fromList
+
     , toList
     , create
     , convertAny
@@ -52,9 +50,6 @@ import Data.Singletons.TypeLits
 import Data.Matrix.Static.Generic.Mutable (MMatrix, MMatrixKind)
 
 type MatrixKind = Nat -> Nat -> (Type -> Type) -> Type -> Type
-
-data Dynamic (m :: MatrixKind) (v :: Type -> Type) a =
-    forall r c. Dynamic {_unwrap :: m r c v a}
 
 type family Mutable (mat :: MatrixKind) = (mmat :: MMatrixKind) | mmat -> mat
 
@@ -163,15 +158,6 @@ matrix :: (SingI r, SingI c, Matrix m v a)
 matrix = fromList . concat . L.transpose
 {-# INLINE matrix #-}
 
-withMatrix :: forall mat v a b. Matrix mat v a
-           => [[a]] -> (forall r c. mat r c v a -> b) -> b
-withMatrix xs f = withSomeSing n $ \(SNat :: Sing n) -> 
-    withSomeSing m $ \(SNat :: Sing m) -> f (matrix xs :: mat n m v a)
-  where
-    n = fromIntegral $ length xs
-    m = fromIntegral $ length $ head xs
-{-# INLINE withMatrix #-}
-
 -- | Construct matrix from a list containg columns.
 fromList :: (SingI r, SingI c, Matrix m v a)
          => [a] -> m r c v a
@@ -183,29 +169,11 @@ fromRows :: (Matrix m v a, SingI r, SingI c) => [v a] -> m r c v a
 fromRows = transpose . fromColumns
 {-# INLINE fromRows #-}
 
-withRows :: forall mat v a b. Matrix mat v a
-          => [v a] -> (forall r c. mat r c v a -> b) -> b
-withRows xs f = withSomeSing n $ \(SNat :: Sing n) -> 
-    withSomeSing m $ \(SNat :: Sing m) -> f (fromRows xs :: mat n m v a)
-  where
-    n = fromIntegral $ length xs
-    m = fromIntegral $ G.length $ head xs
-{-# INLINE withRows #-}
-
 -- | O(m*n) Create matrix from columns
 fromColumns :: (Matrix m v a, SingI r, SingI c)
             => [v a] -> m r c v a
 fromColumns = fromVector . G.concat
 {-# INLINE fromColumns #-}
-
-withColumns :: forall mat v a b. Matrix mat v a
-            => [v a] -> (forall r c. mat r c v a -> b) -> b
-withColumns xs f = withSomeSing n $ \(SNat :: Sing n) -> 
-    withSomeSing m $ \(SNat :: Sing m) -> f (fromRows xs :: mat n m v a)
-  where
-    m = fromIntegral $ length xs
-    n = fromIntegral $ G.length $ head xs
-{-# INLINE withColumns #-}
 
 -- | O(m*n) Create a list by concatenating columns
 toList :: Matrix m v a => m r c v a -> [a]

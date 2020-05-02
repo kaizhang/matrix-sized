@@ -48,6 +48,7 @@ library:
     - Data.Matrix.Static.Generic
     - Data.Matrix.Static.Generic.Mutable
     - Data.Matrix.Static.IO
+    - Data.Matrix.Dynamic
 
   other-modules: 
     - Data.Matrix.Static.Internal

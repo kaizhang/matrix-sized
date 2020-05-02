@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f48fe792931d2d48cfa52a87147cfd957a42380276a987e57d9cbc5b3fcdfc92
+-- hash: 2ea3b5b7faa05665278a369ab66cf647646db76dea2d750aca53169e587f586f
 
 name:           matrix-sized
 version:        0.1.0
@@ -391,6 +391,7 @@ library
       Data.Matrix.Static.Generic
       Data.Matrix.Static.Generic.Mutable
       Data.Matrix.Static.IO
+      Data.Matrix.Dynamic
   other-modules:
       Data.Matrix.Static.Internal
       Data.Matrix.Static.LinearAlgebra.Internal

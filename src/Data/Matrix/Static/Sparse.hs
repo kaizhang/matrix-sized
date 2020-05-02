@@ -38,7 +38,6 @@ module Data.Matrix.Static.Sparse
     , fromTriplet
     , fromTripletC
     , toTriplet
-    , withDecodedMatrix
     , C.fromVector
     , C.fromList
     , C.unsafeFromVector
@@ -69,9 +68,8 @@ import Data.Tuple (swap)
 import GHC.TypeLits (type (<=))
 import Foreign.C.Types
 import Data.Complex
-import Data.Store (Store(..), Size(..), decodeExWith)
+import Data.Store (Store(..), Size(..))
 import Foreign.Storable (sizeOf)
-import Data.ByteString (ByteString)
 import Data.Singletons.TypeLits
 
 import qualified Data.Matrix.Static.Dense as D
@@ -137,17 +135,6 @@ instance (G.Vector v a, Zero a, Store (v a), SingI r, SingI c) =>
           where
             r = fromIntegral $ fromSing (sing :: Sing r) :: Int
             c = fromIntegral $ fromSing (sing :: Sing c) :: Int
-
-withDecodedMatrix :: forall v a b. (G.Vector v a, Store (v a))
-                  => ByteString -> (forall r c. SparseMatrix r c v a -> b) -> b
-withDecodedMatrix bs f = withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
-    withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
-        f (SparseMatrix nnz inner outer :: SparseMatrix r c v a)
-  where
-    (r,c,nnz,inner,outer) = decodeExWith 
-        ((,,,,) <$> peek <*> peek <*> peek <*> peek <*> peek)
-        bs
-{-# INLINE withDecodedMatrix #-}
 
 instance (G.Vector v a, Eq (v a)) => Eq (SparseMatrix r c v a) where
     (==) (SparseMatrix a b c) (SparseMatrix a' b' c') =

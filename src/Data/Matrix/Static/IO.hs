@@ -24,7 +24,7 @@ import qualified Data.ByteString.Char8 as B
 import Conduit
 import Control.Monad (when)
 import qualified Data.Vector.Generic as G
-import qualified Data.Matrix.Static.Generic as C
+import Data.Matrix.Dynamic (Dynamic(..))
 import qualified Data.Vector.Unboxed as U
 import           Data.ByteString.Lex.Fractional (readExponential, readSigned)
 import           Data.ByteString.Lex.Integral   (readDecimal, readDecimal_)
@@ -62,7 +62,7 @@ instance IOElement Double where
     elemType _ = MMReal
 
 fromMM' :: forall o m v a. (PrimMonad m, G.Vector v a, IOElement a)
-        => ConduitT B.ByteString o m (C.Dynamic S.SparseMatrix v a)
+        => ConduitT B.ByteString o m (Dynamic S.SparseMatrix v a)
 fromMM' = linesUnboundedAsciiC .| do
     (ty, (r,c,nnz)) <- parseHeader
     when (elemType (Proxy :: Proxy a) /= ty) $ error "Element types do not match"
@@ -71,7 +71,7 @@ fromMM' = linesUnboundedAsciiC .| do
         "number of non-zeros do not match: " <> show nnz <> "/=" <> show (U.length vec)
     withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
         withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
-            return $ C.Dynamic (S.fromTriplet vec :: S.SparseMatrix r c v a)
+            return $ Dynamic (S.fromTriplet vec :: S.SparseMatrix r c v a)
 
 fromMM :: forall o m r c v a. (PrimMonad m, SingI r, SingI c, G.Vector v a, IOElement a)
        => ConduitT B.ByteString o m (S.SparseMatrix r c v a)
