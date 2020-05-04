@@ -59,7 +59,6 @@ library:
     - bytestring
     - bytestring-lexing
     - double-conversion
-    - conduit-extra
     - conduit
     - primitive >= 0.6.4.0
     - singletons

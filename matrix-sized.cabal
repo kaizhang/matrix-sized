@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2ea3b5b7faa05665278a369ab66cf647646db76dea2d750aca53169e587f586f
+-- hash: f9eed08ad47e7d5956274096208ada253eecb2ef0749ea763987b5712c46651d
 
 name:           matrix-sized
 version:        0.1.0
@@ -414,7 +414,6 @@ library
     , bytestring
     , bytestring-lexing
     , conduit
-    , conduit-extra
     , double-conversion
     , primitive >=0.6.4.0
     , singletons

@@ -46,8 +46,8 @@ pSerialization = testGroup "Serialization"
     tStoreS' :: S.SparseMatrix 80 60 Vector Double -> Bool
     tStoreS' mat = G.flatten mat ==
         Dyn.withDyn (Dyn.decodeSparse $ encode mat) G.flatten
-    tMM :: S.SparseMatrix 80 60 Vector Double -> Bool
-    tMM mat = S.toDense (runST (runConduit $ toMM mat .| fromMM)) ~= S.toDense mat
+    tMM :: S.SparseMatrix 80 60 Vector Int -> Bool
+    tMM mat = runST (runConduit $ toMM mat .| fromMM) == mat
 
 pConversion :: TestTree
 pConversion = testGroup "Conversion"

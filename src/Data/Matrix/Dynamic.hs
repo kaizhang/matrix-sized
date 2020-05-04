@@ -3,13 +3,16 @@
 {-# LANGUAGE Rank2Types            #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Data.Matrix.Dynamic
     ( Dynamic(..)
     , withDyn
     , matrix
+    , fromList
     , fromVector
     , fromColumns
     , fromRows
+    , fromTriplet
     , decodeSparse
     )where
 
@@ -29,14 +32,6 @@ withDyn :: Dynamic m v a -> (forall r c. m r c v a -> b) -> b
 withDyn (Dynamic x) f = f x
 {-# INLINE withDyn #-}
 
--- | Construct matrix from a vector containg columns.
-fromVector :: forall v a m. C.Matrix m v a
-           => (Int, Int) -> v a -> Dynamic m v a
-fromVector (r, c) vec = withSomeSing (fromIntegral r) $ \(SNat :: Sing r) ->
-        withSomeSing (fromIntegral c) $ \(SNat :: Sing c) ->
-            Dynamic (C.fromVector vec :: m r c v a)
-{-# INLINE fromVector #-}
-
 matrix :: forall m v a. C.Matrix m v a => [[a]] -> Dynamic m v a
 matrix lists = withSomeSing (fromIntegral r) $ \(SNat :: Sing r) ->
         withSomeSing (fromIntegral c) $ \(SNat :: Sing c) ->
@@ -45,6 +40,20 @@ matrix lists = withSomeSing (fromIntegral r) $ \(SNat :: Sing r) ->
     r = length lists
     c = length $ head lists
 {-# INLINE matrix #-}
+
+-- | Construct matrix from a list containg columns.
+fromList :: forall v a m. C.Matrix m v a
+         => (Int, Int) -> [a] -> Dynamic m v a
+fromList d = fromVector d . G.fromList
+{-# INLINE fromList #-}
+
+-- | Construct matrix from a vector containg columns.
+fromVector :: forall v a m. C.Matrix m v a
+           => (Int, Int) -> v a -> Dynamic m v a
+fromVector (r, c) vec = withSomeSing (fromIntegral r) $ \(SNat :: Sing r) ->
+        withSomeSing (fromIntegral c) $ \(SNat :: Sing c) ->
+            Dynamic (C.fromVector vec :: m r c v a)
+{-# INLINE fromVector #-}
 
 -- | O(m*n) Create matrix from rows
 fromRows :: forall m v a. C.Matrix m v a
@@ -64,6 +73,13 @@ fromColumns xs = withSomeSing r $ \(SNat :: Sing r) ->
     c = fromIntegral $ length xs
     r = fromIntegral $ G.length $ head xs
 {-# INLINE fromColumns #-}
+
+fromTriplet :: forall u v a. (G.Vector u (Int, Int, a), G.Vector v a)
+            => (Int, Int) -> u (Int, Int, a) -> Dynamic S.SparseMatrix v a
+fromTriplet (r, c) triplets = withSomeSing (fromIntegral r) $ \(SNat :: Sing r) -> 
+    withSomeSing (fromIntegral c) $ \(SNat :: Sing c) ->
+        Dynamic (S.fromTriplet triplets :: S.SparseMatrix r c v a)
+{-# INLINE fromTriplet #-}
 
 decodeSparse :: forall v a. (Store (v a), G.Vector v a)
              => ByteString -> Dynamic S.SparseMatrix v a
