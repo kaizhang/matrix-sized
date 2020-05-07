@@ -70,7 +70,6 @@ import Foreign.C.Types
 import Data.Complex
 import Data.Store (Store(..), Size(..))
 import Foreign.Storable (sizeOf)
-import Data.Singletons.TypeLits
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -121,6 +120,7 @@ instance (G.Vector v a, Zero a, Store (v a), SingI r, SingI c) =>
             case (size, size) of
                 (VarSize f, VarSize g) ->
                     2 * sizeOf (0 :: Int) + f nnz + g inner + g outer
+                _ -> undefined
 
         poke mat@(SparseMatrix nnz inner outer) = poke r >> poke c >> poke nnz >>
             poke inner >> poke outer
@@ -248,8 +248,9 @@ fromTriplet triplets = SparseMatrix val inner outer
   where
     outer = S.scanl (+) 0 $ S.create $ do
         vec <- SM.replicate c 0
-        G.forM_ triplets $ \(_, j, _) -> 
-            SM.unsafeModify vec (+1) j
+        G.forM_ triplets $ \(i, j, _) -> if i < r && j < c
+            then SM.unsafeModify vec (+1) j
+            else error $ printf "Index out of bound: (%d, %d) >= (%d, %d)" i j r c 
         return vec
     (val, inner) = runST $ do
         outer' <- S.thaw outer
@@ -262,6 +263,7 @@ fromTriplet triplets = SparseMatrix val inner outer
             SM.unsafeModify outer' (+1) j
         (,) <$> G.unsafeFreeze val' <*> S.unsafeFreeze inner'
     nnz = G.length triplets
+    r = fromIntegral $ fromSing (sing :: Sing r)
     c = fromIntegral $ fromSing (sing :: Sing c)
 {-# INLINE fromTriplet #-}
 
