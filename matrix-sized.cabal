@@ -1,13 +1,13 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f9eed08ad47e7d5956274096208ada253eecb2ef0749ea763987b5712c46651d
+-- hash: 856dabd5492c97e6a433e61a9b3b39337897ded09cf66a9702ba3010a9ee0a83
 
 name:           matrix-sized
-version:        0.1.0
+version:        0.1.1
 synopsis:       Haskell matrix library with interface to C++ linear algebra libraries.
 description:    A Haskell implementation of matrices with statically known sizes. The library also comes with the bindings to high performance C++ linear algebra libraries such as Eigen and Spectra.
 category:       Math

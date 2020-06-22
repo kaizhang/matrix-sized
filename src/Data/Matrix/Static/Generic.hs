@@ -44,8 +44,7 @@ import qualified Data.List as L
 import Data.Tuple (swap)
 import Data.Kind (Type)
 import GHC.TypeLits (Nat, type (<=))
-import Data.Singletons (SingI, Sing, fromSing, sing, withSomeSing)
-import Data.Singletons.TypeLits
+import Data.Singletons (SingI, Sing, fromSing, sing)
 
 import Data.Matrix.Static.Generic.Mutable (MMatrix, MMatrixKind)
 

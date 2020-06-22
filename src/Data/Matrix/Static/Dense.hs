@@ -105,7 +105,7 @@ import Data.Singletons
 import Data.Tuple (swap)
 import qualified Data.List as L
 import Text.Printf (printf)
-import Data.Store (Store(..), Size(..), decodeExWith)
+import Data.Store (Store(..), Size(..))
 import Foreign.Storable (sizeOf)
 
 import           Data.Matrix.Static.Dense.Mutable (MMatrix (..))
@@ -123,6 +123,7 @@ instance (G.Vector v a, Store (v a), SingI r, SingI c) =>
         size = VarSize $ \(Matrix vec) -> case size of
             VarSize f  ->
                 2 * sizeOf (0 :: Int) + f vec
+            _ -> undefined
 
         poke mat@(Matrix vec) = poke r >> poke c >> poke vec
           where
