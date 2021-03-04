@@ -16,14 +16,15 @@ import qualified Data.Matrix.Static.Sparse as S
 import qualified Data.Matrix.Dynamic as Dyn
 import Control.Monad.ST (runST)
 import Data.Matrix.Static.IO
-import Data.Singletons hiding ((@@))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Test.Tasty.QuickCheck
 import Conduit
-import Data.Store
+import Flat (flat, unflat)
+import Flat.Instances.Vector ()
+import Data.Either
 
-import Test.Utils
+import Test.Utils ()
 
 base :: TestTree
 base = testGroup "Base"
@@ -35,17 +36,21 @@ base = testGroup "Base"
 pSerialization :: TestTree
 pSerialization = testGroup "Serialization"
     [ testProperty "Dense: id == decode . encode" tStoreD
+    , testProperty "Dense: id == decode . encode" tStoreD'
     , testProperty "Sparse: id == decode . encode" tStoreS
     , testProperty "Sparse: id == decode . encode" tStoreS'
     , testProperty "Sparse: id ~= fromMM . toMM" tMM ]
   where
     tStoreD :: D.Matrix 80 60 Vector Double -> Bool
-    tStoreD mat = mat == decodeEx (encode mat)
+    tStoreD mat = mat == fromRight undefined (unflat $ flat mat)
+    tStoreD' :: D.Matrix 80 60 Vector Double -> Bool
+    tStoreD' mat = G.flatten mat == Dyn.withDyn
+        (either (error . show) id $ unflat $ flat mat :: Dyn.Dynamic D.Matrix Vector Double) G.flatten
     tStoreS :: S.SparseMatrix 80 60 Vector Double -> Bool
-    tStoreS mat = mat == decodeEx (encode mat)
+    tStoreS mat = mat == fromRight undefined (unflat $ flat mat)
     tStoreS' :: S.SparseMatrix 80 60 Vector Double -> Bool
-    tStoreS' mat = G.flatten mat ==
-        Dyn.withDyn (Dyn.decodeSparse $ encode mat) G.flatten
+    tStoreS' mat = G.flatten mat == Dyn.withDyn
+        (fromRight undefined $ unflat $ flat mat :: Dyn.Dynamic S.SparseMatrix Vector Double) G.flatten
     tMM :: S.SparseMatrix 80 60 Vector Int -> Bool
     tMM mat = runST (runConduit $ toMM mat .| fromMM) == mat
 

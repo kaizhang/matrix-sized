@@ -14,10 +14,8 @@ module Data.Matrix.Dynamic
     , fromColumns
     , fromRows
     , fromTriplet
-    , decodeSparse
     )where
 
-import Data.ByteString (ByteString)
 import qualified Data.Matrix.Static.Sparse as S
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Generic as C
@@ -25,30 +23,37 @@ import qualified Data.Vector.Generic         as G
 import Data.Kind (Type)
 import Data.Singletons
 import Data.Singletons.TypeLits
-import Data.Store (Store(..), Size(..), decodeExWith)
-import Foreign.Storable (sizeOf)
+import Flat (Flat(..))
 
 data Dynamic (m :: C.MatrixKind) (v :: Type -> Type) a where
     Dynamic :: m r c v a -> Dynamic m v a
 
-instance (G.Vector v a, Store a, Store (v a)) =>
-    Store (Dynamic D.Matrix v a) where
-        size = VarSize $ \(Dynamic (D.Matrix vec)) -> case size of
-            VarSize f  ->
-                2 * sizeOf (0 :: Int) + f vec
-            _ -> undefined
+instance (G.Vector v a, Flat (v a)) => Flat (Dynamic D.Matrix v a) where
+    encode (Dynamic mat@(D.Matrix vec)) = encode (r, c, vec)
+      where
+        (r,c) = C.dim mat
+    decode = do
+        (r, c, vec) <- decode
+        withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
+            withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
+                return $ Dynamic (D.Matrix vec :: D.Matrix r c v a)
+    size (Dynamic mat@(D.Matrix vec)) = size (r, c, vec)
+      where
+        (r,c) = C.dim mat
 
-        poke (Dynamic mat@(D.Matrix vec)) = poke r >> poke c >> poke vec
+instance (G.Vector v a, S.Zero a, Flat (v a))  =>
+    Flat (Dynamic S.SparseMatrix v a) where
+        encode (Dynamic mat@(S.SparseMatrix nnz inner outer)) = encode (r, c, nnz, inner, outer)
           where
             (r,c) = C.dim mat
-
-        peek = do
-            r <- peek
-            c <- peek
-            vec <- peek
+        decode = do
+            (r, c, nnz, inner, outer) <- decode
             withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
                 withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
-                    return $ Dynamic (D.matrix vec :: D.Matrix r c v a)
+                    return $ Dynamic (S.SparseMatrix nnz inner outer :: S.SparseMatrix r c v a)
+        size (Dynamic mat@(S.SparseMatrix nnz inner outer)) = size (r, c, nnz, inner, outer)
+          where
+            (r,c) = C.dim mat
 
 withDyn :: Dynamic m v a -> (forall r c. m r c v a -> b) -> b
 withDyn (Dynamic x) f = f x
@@ -102,14 +107,3 @@ fromTriplet (r, c) triplets = withSomeSing (fromIntegral r) $ \(SNat :: Sing r) 
     withSomeSing (fromIntegral c) $ \(SNat :: Sing c) ->
         Dynamic (S.fromTriplet triplets :: S.SparseMatrix r c v a)
 {-# INLINE fromTriplet #-}
-
-decodeSparse :: forall v a. (Store (v a), G.Vector v a)
-             => ByteString -> Dynamic S.SparseMatrix v a
-decodeSparse bs = withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
-    withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
-        Dynamic (S.SparseMatrix nnz inner outer :: S.SparseMatrix r c v a)
-  where
-    (r,c,nnz,inner,outer) = decodeExWith 
-        ((,,,,) <$> peek <*> peek <*> peek <*> peek <*> peek)
-        bs
-{-# INLINE decodeSparse #-}

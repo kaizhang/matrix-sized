@@ -68,8 +68,8 @@ import Data.Tuple (swap)
 import GHC.TypeLits (type (<=))
 import Foreign.C.Types
 import Data.Complex
-import Data.Store (Store(..), Size(..))
-import Foreign.Storable (sizeOf)
+import Flat (Flat(..))
+import Flat.Instances.Vector ()
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -114,27 +114,29 @@ data SparseMatrix :: C.MatrixKind where
                                      -- non-zero in the previous two arrays.
                  -> SparseMatrix r c v a
 
-instance (G.Vector v a, Zero a, Store (v a), SingI r, SingI c) =>
-    Store (SparseMatrix r c v a) where
-        size = VarSize $ \(SparseMatrix nnz inner outer) ->
-            case (size, size) of
-                (VarSize f, VarSize g) ->
-                    2 * sizeOf (0 :: Int) + f nnz + g inner + g outer
-                _ -> undefined
+instance Flat CInt where
+    encode x = encode (fromIntegral x :: Int)
+    decode = do
+        x <- decode
+        return $ fromIntegral (x :: Int)
+    size x = size (fromIntegral x :: Int)
 
-        poke mat@(SparseMatrix nnz inner outer) = poke r >> poke c >> poke nnz >>
-            poke inner >> poke outer
+instance (G.Vector v a, Zero a, Flat (v a), SingI r, SingI c) =>
+    Flat (SparseMatrix r c v a) where
+        encode mat@(SparseMatrix nnz inner outer) = encode (r, c, nnz, inner, outer)
           where
             (r,c) = C.dim mat
-        peek = do
-            r' <- peek
-            c' <- peek
+        decode = do
+            (r', c', nnz, inner, outer) <- decode
             if r' /= r || c' /= c
                 then error $ "Dimensions donot match: " <> show (r,c) <> " /= " <> show (r',c')
-                else SparseMatrix <$> peek <*> peek <*> peek
+                else return $ SparseMatrix nnz inner outer
           where
             r = fromIntegral $ fromSing (sing :: Sing r) :: Int
             c = fromIntegral $ fromSing (sing :: Sing c) :: Int
+        size mat@(SparseMatrix nnz inner outer) = size (r, c, nnz, inner, outer)
+          where
+            (r,c) = C.dim mat
 
 instance (G.Vector v a, Eq (v a)) => Eq (SparseMatrix r c v a) where
     (==) (SparseMatrix a b c) (SparseMatrix a' b' c') =

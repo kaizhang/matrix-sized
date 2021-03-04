@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1288948cc01d0254fd4dd8d3010ccae7b176636783dad7f106b7082851fdd575
+-- hash: aaba7891bcc3536a479f3888f0621c6a0df8ce55322bf2e3bb045acdefde472c
 
 name:           matrix-sized
 version:        0.1.2
@@ -415,9 +415,9 @@ library
     , bytestring-lexing
     , conduit
     , double-conversion
+    , flat
     , primitive >=0.6.4.0
     , singletons
-    , store
     , vector >=0.11
   if flag(parallel)
     cc-options: -fopenmp
@@ -439,10 +439,10 @@ test-suite test
       base
     , conduit
     , data-ordlist
+    , flat
     , ieee754
     , matrix-sized
     , singletons
-    , store
     , tasty
     , tasty-quickcheck
     , vector

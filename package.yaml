@@ -63,7 +63,7 @@ library:
     - primitive >= 0.6.4.0
     - singletons
     - vector >= 0.11
-    - store
+    - flat
 
   include-dirs:
     - eigen3
@@ -104,9 +104,9 @@ tests:
       - base
       - conduit
       - data-ordlist
-      - store
       - matrix-sized
       - ieee754
+      - flat
       - singletons
       - tasty
       - tasty-quickcheck
