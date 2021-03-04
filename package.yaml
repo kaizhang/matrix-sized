@@ -1,5 +1,5 @@
 name: matrix-sized
-version: "0.1.1"
+version: "0.1.2"
 category: "Math"
 synopsis:    "Haskell matrix library with interface to C++ linear algebra libraries."
 description: "A Haskell implementation of matrices with statically known sizes.
@@ -7,7 +7,7 @@ description: "A Haskell implementation of matrices with statically known sizes.
                 C++ linear algebra libraries such as Eigen and Spectra."
 license: "BSD-3-Clause"
 author: "Kai Zhang"
-copyright: "(c) 2020 Kai Zhang"
+copyright: "(c) 2020-2021 Kai Zhang"
 maintainer: "kai@kzhang.org"
 
 ghc-options: -Wall

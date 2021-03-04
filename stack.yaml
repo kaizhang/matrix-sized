@@ -5,3 +5,6 @@ resolver: nightly-2019-05-25
 flags:
   matrix-sized:
     parallel: true
+
+extra-deps:
+- flat-0.4.4@sha256:b99a4cd7aa28e1f1470589fde57b4db53932bfa4eb2f780c963fe0f7fa576ac2,8793

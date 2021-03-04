@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Data.Matrix.Dynamic
     ( Dynamic(..)
     , withDyn
@@ -18,15 +19,36 @@ module Data.Matrix.Dynamic
 
 import Data.ByteString (ByteString)
 import qualified Data.Matrix.Static.Sparse as S
+import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Generic as C
 import qualified Data.Vector.Generic         as G
 import Data.Kind (Type)
 import Data.Singletons
 import Data.Singletons.TypeLits
-import Data.Store (Store(..), decodeExWith)
+import Data.Store (Store(..), Size(..), decodeExWith)
+import Foreign.Storable (sizeOf)
 
 data Dynamic (m :: C.MatrixKind) (v :: Type -> Type) a where
     Dynamic :: m r c v a -> Dynamic m v a
+
+instance (G.Vector v a, Store a, Store (v a)) =>
+    Store (Dynamic D.Matrix v a) where
+        size = VarSize $ \(Dynamic (D.Matrix vec)) -> case size of
+            VarSize f  ->
+                2 * sizeOf (0 :: Int) + f vec
+            _ -> undefined
+
+        poke (Dynamic mat@(D.Matrix vec)) = poke r >> poke c >> poke vec
+          where
+            (r,c) = C.dim mat
+
+        peek = do
+            r <- peek
+            c <- peek
+            vec <- peek
+            withSomeSing (fromIntegral (r :: Int)) $ \(SNat :: Sing r) ->
+                withSomeSing (fromIntegral (c :: Int)) $ \(SNat :: Sing c) ->
+                    return $ Dynamic (D.matrix vec :: D.Matrix r c v a)
 
 withDyn :: Dynamic m v a -> (forall r c. m r c v a -> b) -> b
 withDyn (Dynamic x) f = f x
