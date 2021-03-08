@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aaba7891bcc3536a479f3888f0621c6a0df8ce55322bf2e3bb045acdefde472c
+-- hash: fcfa9658823eba9cc4006fef792c0397a52a4589d16f318e48daf974a822bb7e
 
 name:           matrix-sized
 version:        0.1.2
@@ -397,6 +397,7 @@ library
       Data.Matrix.Static.LinearAlgebra.Internal
   hs-source-dirs:
       src
+  default-extensions: StrictData
   ghc-options: -Wall
   cxx-options: -std=c++11
   include-dirs:
@@ -414,6 +415,7 @@ library
     , bytestring
     , bytestring-lexing
     , conduit
+    , deepseq
     , double-conversion
     , flat
     , primitive >=0.6.4.0
@@ -434,6 +436,7 @@ test-suite test
       Test.Utils
   hs-source-dirs:
       tests
+  default-extensions: StrictData
   ghc-options: -Wall -threaded
   build-depends:
       base
@@ -446,4 +449,22 @@ test-suite test
     , tasty
     , tasty-quickcheck
     , vector
+  default-language: Haskell2010
+
+benchmark bench
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_matrix_sized
+  hs-source-dirs:
+      benchmark
+  default-extensions: StrictData
+  ghc-options: -Wall
+  build-depends:
+      base
+    , deepseq
+    , matrix-sized
+    , singletons
+    , vector
+    , weigh
   default-language: Haskell2010

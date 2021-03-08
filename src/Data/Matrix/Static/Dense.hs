@@ -107,6 +107,7 @@ import Data.Tuple (swap)
 import qualified Data.List as L
 import Text.Printf (printf)
 import Flat (Flat(..))
+import Control.DeepSeq (NFData(..))
 
 import           Data.Matrix.Static.Dense.Mutable (MMatrix (..))
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -117,6 +118,9 @@ type instance C.Mutable Matrix = MMatrix
 -- | Column-major matrix
 data Matrix :: C.MatrixKind where
     Matrix :: (SingI r, SingI c) => v a -> Matrix r c v a
+
+instance NFData (v a) => NFData (Matrix r c v a) where
+    rnf (Matrix vec) = rnf vec
 
 instance (G.Vector v a, Flat (v a), SingI r, SingI c) =>
     Flat (Matrix r c v a) where

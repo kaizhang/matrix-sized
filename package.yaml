@@ -35,6 +35,8 @@ flags:
     manual: true
     default: false
 
+default-extensions: StrictData
+
 library:
   source-dirs:
     - src
@@ -59,6 +61,7 @@ library:
     - bytestring
     - bytestring-lexing
     - double-conversion
+    - deepseq
     - conduit
     - primitive >= 0.6.4.0
     - singletons
@@ -113,5 +116,20 @@ tests:
       - vector
 
     #ld-options: "-fopenmp"
+
+benchmarks:
+  bench:
+    main: "Main.hs"
+
+    source-dirs:
+      - benchmark
+
+    dependencies:
+      - base
+      - matrix-sized
+      - singletons
+      - vector
+      - weigh
+      - deepseq
 
 github: kaizhang/matrix-sized

@@ -31,7 +31,6 @@ import Data.Vector.Storable (Vector)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Complex (Complex)
 import Data.Singletons.Prelude hiding ((@@), type (==), type (-), type (<=))
-import Data.Type.Bool (If)
 import Data.Type.Equality
 import GHC.TypeLits
 

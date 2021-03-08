@@ -1,6 +1,6 @@
 packages:
 - '.'
-resolver: nightly-2019-05-25
+resolver: lts-17.5
 
 flags:
   matrix-sized:

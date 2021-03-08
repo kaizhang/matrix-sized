@@ -70,6 +70,7 @@ import Foreign.C.Types
 import Data.Complex
 import Flat (Flat(..))
 import Flat.Instances.Vector ()
+import Control.DeepSeq (NFData(..))
 
 import qualified Data.Matrix.Static.Dense as D
 import qualified Data.Matrix.Static.Dense.Mutable as DM
@@ -113,6 +114,9 @@ data SparseMatrix :: C.MatrixKind where
                                      -- (resp. row) the index of the first
                                      -- non-zero in the previous two arrays.
                  -> SparseMatrix r c v a
+
+instance NFData (v a) => NFData (SparseMatrix r c v a) where
+    rnf (Matrix v1 v2 v3) = rnf (v1, v2, v3)
 
 instance Flat CInt where
     encode x = encode (fromIntegral x :: Int)
