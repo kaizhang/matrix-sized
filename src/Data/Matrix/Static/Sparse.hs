@@ -116,7 +116,7 @@ data SparseMatrix :: C.MatrixKind where
                  -> SparseMatrix r c v a
 
 instance NFData (v a) => NFData (SparseMatrix r c v a) where
-    rnf (Matrix v1 v2 v3) = rnf (v1, v2, v3)
+    rnf (SparseMatrix v1 v2 v3) = rnf (v1, v2, v3)
 
 instance Flat CInt where
     encode x = encode (fromIntegral x :: Int)

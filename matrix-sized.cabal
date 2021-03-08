@@ -4,12 +4,12 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fcfa9658823eba9cc4006fef792c0397a52a4589d16f318e48daf974a822bb7e
+-- hash: 4588a807d039a27f1233fe832056769507b8dca77db208c9a21b601075c5ded1
 
 name:           matrix-sized
-version:        0.1.2
+version:        0.2.0
 synopsis:       Haskell matrix library with interface to C++ linear algebra libraries.
-description:    A Haskell implementation of matrices with statically known sizes. The library also comes with the bindings to high performance C++ linear algebra libraries such as Eigen and Spectra.
+description:    A Haskell implementation of matrices with statically known sizes. The library also comes with the bindings to high performance C++ linear algebra libraries such as Eigen v3.3.9 and Spectra v0.9.0.
 category:       Math
 homepage:       https://github.com/kaizhang/matrix-sized#readme
 bug-reports:    https://github.com/kaizhang/matrix-sized/issues
@@ -29,10 +29,8 @@ extra-source-files:
     eigen3/Eigen/Eigenvalues
     eigen3/Eigen/Geometry
     eigen3/Eigen/Householder
-    eigen3/Eigen/inverse.txt
     eigen3/Eigen/IterativeLinearSolvers
     eigen3/Eigen/Jacobi
-    eigen3/Eigen/KLUSupport
     eigen3/Eigen/LU
     eigen3/Eigen/MetisSupport
     eigen3/Eigen/OrderingMethods
@@ -83,7 +81,6 @@ extra-source-files:
     eigen3/Eigen/src/Core/arch/ZVector/Complex.h
     eigen3/Eigen/src/Core/arch/ZVector/MathFunctions.h
     eigen3/Eigen/src/Core/arch/ZVector/PacketMath.h
-    eigen3/Eigen/src/Core/ArithmeticSequence.h
     eigen3/Eigen/src/Core/Array.h
     eigen3/Eigen/src/Core/ArrayBase.h
     eigen3/Eigen/src/Core/ArrayWrapper.h
@@ -121,7 +118,6 @@ extra-source-files:
     eigen3/Eigen/src/Core/GeneralProduct.h
     eigen3/Eigen/src/Core/GenericPacketMath.h
     eigen3/Eigen/src/Core/GlobalFunctions.h
-    eigen3/Eigen/src/Core/IndexedView.h
     eigen3/Eigen/src/Core/Inverse.h
     eigen3/Eigen/src/Core/IO.h
     eigen3/Eigen/src/Core/Map.h
@@ -180,8 +176,6 @@ extra-source-files:
     eigen3/Eigen/src/Core/util/Constants.h
     eigen3/Eigen/src/Core/util/DisableStupidWarnings.h
     eigen3/Eigen/src/Core/util/ForwardDeclarations.h
-    eigen3/Eigen/src/Core/util/IndexedViewHelper.h
-    eigen3/Eigen/src/Core/util/IntegralConstant.h
     eigen3/Eigen/src/Core/util/Macros.h
     eigen3/Eigen/src/Core/util/Memory.h
     eigen3/Eigen/src/Core/util/Meta.h
@@ -189,7 +183,6 @@ extra-source-files:
     eigen3/Eigen/src/Core/util/NonMPL2.h
     eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h
     eigen3/Eigen/src/Core/util/StaticAssert.h
-    eigen3/Eigen/src/Core/util/SymbolicIndex.h
     eigen3/Eigen/src/Core/util/XprHelper.h
     eigen3/Eigen/src/Core/VectorBlock.h
     eigen3/Eigen/src/Core/VectorwiseOp.h
@@ -235,7 +228,6 @@ extra-source-files:
     eigen3/Eigen/src/IterativeLinearSolvers/LeastSquareConjugateGradient.h
     eigen3/Eigen/src/IterativeLinearSolvers/SolveWithGuess.h
     eigen3/Eigen/src/Jacobi/Jacobi.h
-    eigen3/Eigen/src/KLUSupport/KLUSupport.h
     eigen3/Eigen/src/LU/arch/Inverse_SSE.h
     eigen3/Eigen/src/LU/Determinant.h
     eigen3/Eigen/src/LU/FullPivLU.h
@@ -260,7 +252,6 @@ extra-source-files:
     eigen3/Eigen/src/plugins/BlockMethods.h
     eigen3/Eigen/src/plugins/CommonCwiseBinaryOps.h
     eigen3/Eigen/src/plugins/CommonCwiseUnaryOps.h
-    eigen3/Eigen/src/plugins/IndexedViewMethods.h
     eigen3/Eigen/src/plugins/MatrixCwiseBinaryOps.h
     eigen3/Eigen/src/plugins/MatrixCwiseUnaryOps.h
     eigen3/Eigen/src/QR/ColPivHouseholderQR.h

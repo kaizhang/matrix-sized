@@ -1,10 +1,10 @@
 name: matrix-sized
-version: "0.1.2"
+version: "0.2.0"
 category: "Math"
 synopsis:    "Haskell matrix library with interface to C++ linear algebra libraries."
 description: "A Haskell implementation of matrices with statically known sizes.
                 The library also comes with the bindings to high performance
-                C++ linear algebra libraries such as Eigen and Spectra."
+                C++ linear algebra libraries such as Eigen v3.3.9 and Spectra v0.9.0."
 license: "BSD-3-Clause"
 author: "Kai Zhang"
 copyright: "(c) 2020-2021 Kai Zhang"
@@ -17,14 +17,12 @@ extra-source-files:
 
   - eigen3/Eigen/*
   - eigen3/Eigen/src/**/*.h
-  - eigen3/Eigen/src/Core/**/*.h
-  - eigen3/Eigen/src/Core/arch/**/*.h
-  - eigen3/Eigen/src/Geometry/arch/*.h
-  - eigen3/Eigen/src/LU/arch/*.h
+  - eigen3/Eigen/src/**/**/*.h
+  - eigen3/Eigen/src/**/**/**/*.h
 
   - spectra/Spectra/*.h
   - spectra/Spectra/**/*.h
-  - spectra/Spectra/MatOp/**/*.h
+  - spectra/Spectra/**/**/*.h
 
   - README.md
   - ChangeLog.md
