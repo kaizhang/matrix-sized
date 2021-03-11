@@ -12,6 +12,7 @@
 #include <Spectra/MatOp/SparseSymShiftSolve.h>
 #include <Spectra/MatOp/SparseCholesky.h>
 #include <Spectra/MatOp/SparseGenMatProd.h>
+#include <Spectra/Util/GEigsMode.h>
 
 using namespace Spectra;
 using namespace Eigen;
@@ -46,24 +47,24 @@ extern "C" const int spectral_eigs(
 
     if(mode == 0) {
         DenseGenMatProd<double> op(M);
-        GenEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigs(&op, k, ncv);
+        GenEigsSolver<DenseGenMatProd<double>> eigs(op, k, ncv);
         eigs.init();
-        int nconv = eigs.compute(maxit, tol, select);
-        if(eigs.info() == 0) {
+        int nconv = eigs.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigs.info() == CompInfo::Successful) {
             D = eigs.eigenvalues();
             V = eigs.eigenvectors();
         } 
-        return eigs.info();
+        return static_cast<int>(eigs.info());
     } else {
         DenseGenRealShiftSolve<double> op(M);
-        GenEigsRealShiftSolver< double, LARGEST_MAGN, DenseGenRealShiftSolve<double> > eigs(&op, k, ncv, sigma);
+        GenEigsRealShiftSolver<DenseGenRealShiftSolve<double>> eigs(op, k, ncv, sigma);
         eigs.init();
-        int nconv = eigs.compute(maxit, tol, select);
-        if(eigs.info() == 0) {
+        int nconv = eigs.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigs.info() == CompInfo::Successful) {
             D = eigs.eigenvalues();
             V = eigs.eigenvectors();
         } 
-        return eigs.info();
+        return static_cast<int>(eigs.info());
     }
 }
 
@@ -82,24 +83,24 @@ extern "C" const int spectral_eigsh(
 
     if(mode == 0) {
         DenseGenMatProd<double> op(M);
-        SymEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigsh(&op, k, ncv);
+        SymEigsSolver<DenseGenMatProd<double>> eigsh(op, k, ncv);
         eigsh.init();
-        int nconv = eigsh.compute(maxit, tol, select);
-        if(eigsh.info() == 0) {
+        int nconv = eigsh.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigsh.info() == CompInfo::Successful) {
             D = eigsh.eigenvalues();
             V = eigsh.eigenvectors();
         }
-        return eigsh.info();
+        return static_cast<int>(eigsh.info());
     } else {
         DenseSymShiftSolve<double> op(M);
-        SymEigsShiftSolver< double, LARGEST_MAGN, DenseSymShiftSolve<double> > eigsh(&op, k, ncv, sigma);
+        SymEigsShiftSolver<DenseSymShiftSolve<double>> eigsh(op, k, ncv, sigma);
         eigsh.init();
-        int nconv = eigsh.compute(maxit, tol, select);
-        if(eigsh.info() == 0) {
+        int nconv = eigsh.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigsh.info() == CompInfo::Successful) {
             D = eigsh.eigenvalues();
             V = eigsh.eigenvectors();
         } 
-        return eigsh.info();
+        return static_cast<int>(eigsh.info());
     }
 }
 
@@ -119,24 +120,24 @@ extern "C" const int spectral_seigs(
 
     if(mode == 0) {
         SparseGenMatProd<double> op(M);
-        GenEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigs(&op, k, ncv);
+        GenEigsSolver<SparseGenMatProd<double>> eigs(op, k, ncv);
         eigs.init();
-        int nconv = eigs.compute(maxit, tol, select);
-        if(eigs.info() == 0) {
+        int nconv = eigs.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigs.info() == CompInfo::Successful) {
             D = eigs.eigenvalues();
             V = eigs.eigenvectors();
         }
-        return eigs.info();
+        return static_cast<int>(eigs.info());
     } else {
         SparseGenRealShiftSolve<double> op(M);
-        GenEigsRealShiftSolver< double, LARGEST_MAGN,  SparseGenRealShiftSolve<double> > eigs(&op, k, ncv, sigma);
+        GenEigsRealShiftSolver<SparseGenRealShiftSolve<double>> eigs(op, k, ncv, sigma);
         eigs.init();
-        int nconv = eigs.compute(maxit, tol, select);
-        if(eigs.info() == 0) {
+        int nconv = eigs.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigs.info() == CompInfo::Successful) {
             D = eigs.eigenvalues();
             V = eigs.eigenvectors();
         }
-        return eigs.info();
+        return static_cast<int>(eigs.info());
     }
 }
 
@@ -156,23 +157,24 @@ extern "C" const int spectral_seigsh(
 
     if(mode == 0) {
         SparseGenMatProd<double> op(M);
-        SymEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigsh(&op, k, ncv);
+        SymEigsSolver<SparseGenMatProd<double>> eigsh(op, k, ncv);
         eigsh.init();
-        int nconv = eigsh.compute(maxit, tol, select);
-        if(eigsh.info() == 0) {
+        int nconv = eigsh.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigsh.info() == CompInfo::Successful) {
             D = eigsh.eigenvalues();
             V = eigsh.eigenvectors();
         }
+        return static_cast<int>(eigsh.info());
     } else {
         SparseSymShiftSolve<double> op(M);
-        SymEigsShiftSolver< double, LARGEST_MAGN, SparseSymShiftSolve<double> > eigsh(&op, k, ncv, 0);
+        SymEigsShiftSolver<SparseSymShiftSolve<double>> eigsh(op, k, ncv, 0);
         eigsh.init();
-        int nconv = eigsh.compute(maxit, tol, select);
-        if(eigsh.info() == 0) {
+        int nconv = eigsh.compute(static_cast<SortRule>(select), maxit, tol);
+        if(eigsh.info() == CompInfo::Successful) {
             D = eigsh.eigenvalues();
             V = eigsh.eigenvectors();
         }
-        return eigsh.info();
+        return static_cast<int>(eigsh.info());
     }
 }
 
@@ -195,15 +197,15 @@ extern "C" const int spectral_geigsh(
     DenseSymMatProd<double> op(A);
     SparseCholesky<double> Bop(B);
 
-    SymGEigsSolver<double, SMALLEST_ALGE, DenseSymMatProd<double>, SparseCholesky<double>, GEIGS_CHOLESKY> geigs(&op, &Bop, k, ncv);
+    SymGEigsSolver<DenseSymMatProd<double>, SparseCholesky<double>, GEigsMode::Cholesky> geigs(op, Bop, k, ncv);
 
     geigs.init();
-    int nconv = geigs.compute(maxit, tol, select);
-    if(geigs.info() == 0) {
+    int nconv = geigs.compute(static_cast<SortRule>(select), maxit, tol);
+    if(geigs.info() == CompInfo::Successful) {
         D = geigs.eigenvalues();
         V = geigs.eigenvectors();
     }
-    return geigs.info();
+    return static_cast<int>(geigs.info());
 }
 
 

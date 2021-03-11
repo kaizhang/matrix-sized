@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4588a807d039a27f1233fe832056769507b8dca77db208c9a21b601075c5ded1
+-- hash: dd3cf2715b4f514ebdf5d567fea7a62069d49a338615dcff18eeb98634c78cd8
 
 name:           matrix-sized
 version:        0.2.0
@@ -322,13 +322,16 @@ extra-source-files:
     eigen3/Eigen/src/SVD/SVDBase.h
     eigen3/Eigen/src/SVD/UpperBidiagonalization.h
     eigen3/Eigen/src/UmfPackSupport/UmfPackSupport.h
+    spectra/Spectra/DavidsonSymEigsSolver.h
     spectra/Spectra/GenEigsBase.h
     spectra/Spectra/GenEigsComplexShiftSolver.h
     spectra/Spectra/GenEigsRealShiftSolver.h
     spectra/Spectra/GenEigsSolver.h
+    spectra/Spectra/JDSymEigsBase.h
     spectra/Spectra/SymEigsBase.h
     spectra/Spectra/SymEigsShiftSolver.h
     spectra/Spectra/SymEigsSolver.h
+    spectra/Spectra/SymGEigsShiftSolver.h
     spectra/Spectra/SymGEigsSolver.h
     spectra/Spectra/contrib/LOBPCGSolver.h
     spectra/Spectra/contrib/PartialSVDSolver.h
@@ -336,6 +339,9 @@ extra-source-files:
     spectra/Spectra/LinAlg/BKLDLT.h
     spectra/Spectra/LinAlg/DoubleShiftQR.h
     spectra/Spectra/LinAlg/Lanczos.h
+    spectra/Spectra/LinAlg/Orthogonalization.h
+    spectra/Spectra/LinAlg/RitzPairs.h
+    spectra/Spectra/LinAlg/SearchSpace.h
     spectra/Spectra/LinAlg/TridiagEigen.h
     spectra/Spectra/LinAlg/UpperHessenbergEigen.h
     spectra/Spectra/LinAlg/UpperHessenbergQR.h
@@ -346,19 +352,25 @@ extra-source-files:
     spectra/Spectra/MatOp/DenseSymMatProd.h
     spectra/Spectra/MatOp/DenseSymShiftSolve.h
     spectra/Spectra/MatOp/internal/ArnoldiOp.h
+    spectra/Spectra/MatOp/internal/SymGEigsBucklingOp.h
+    spectra/Spectra/MatOp/internal/SymGEigsCayleyOp.h
     spectra/Spectra/MatOp/internal/SymGEigsCholeskyOp.h
     spectra/Spectra/MatOp/internal/SymGEigsRegInvOp.h
+    spectra/Spectra/MatOp/internal/SymGEigsShiftInvertOp.h
     spectra/Spectra/MatOp/SparseCholesky.h
+    spectra/Spectra/MatOp/SparseGenComplexShiftSolve.h
     spectra/Spectra/MatOp/SparseGenMatProd.h
     spectra/Spectra/MatOp/SparseGenRealShiftSolve.h
     spectra/Spectra/MatOp/SparseRegularInverse.h
     spectra/Spectra/MatOp/SparseSymMatProd.h
     spectra/Spectra/MatOp/SparseSymShiftSolve.h
+    spectra/Spectra/MatOp/SymShiftInvert.h
     spectra/Spectra/Util/CompInfo.h
     spectra/Spectra/Util/GEigsMode.h
     spectra/Spectra/Util/SelectionRule.h
     spectra/Spectra/Util/SimpleRandom.h
     spectra/Spectra/Util/TypeTraits.h
+    spectra/Spectra/Util/Version.h
     README.md
     ChangeLog.md
 
