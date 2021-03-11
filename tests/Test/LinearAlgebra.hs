@@ -78,7 +78,7 @@ eigenTest = testGroup "Eigendecomposition"
       where
         m' = D.map (\x -> mkPolar x 0) m
         (d, v)= eig m
-    eigen2 :: Matrix 10 10 Double -> Bool
+    eigen2 :: Matrix 100 100 Double -> Bool
     eigen2 m = m' @@ v ~= v @@ S.diag d
       where
         m' = D.map (\x -> mkPolar x 0) m

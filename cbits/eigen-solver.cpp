@@ -1,7 +1,16 @@
-#include <Spectra/GenEigsSolver.h>
-#include <Spectra/SymEigsSolver.h>
 #include "eigen-runtime.h"
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
 #include <Eigen/Sparse>
+#include <Spectra/GenEigsSolver.h>
+#include <Spectra/GenEigsRealShiftSolver.h>
+#include <Spectra/SymEigsSolver.h>
+#include <Spectra/SymEigsShiftSolver.h>
+#include <Spectra/SymGEigsSolver.h>
+#include <Spectra/MatOp/DenseSymMatProd.h>
+#include <Spectra/MatOp/SparseGenRealShiftSolve.h>
+#include <Spectra/MatOp/SparseSymShiftSolve.h>
+#include <Spectra/MatOp/SparseCholesky.h>
 #include <Spectra/MatOp/SparseGenMatProd.h>
 
 using namespace Spectra;
@@ -21,10 +30,13 @@ extern "C" RET eigen_eig(
     V = es.eigenvectors();
 }
 
-extern "C" RET spectral_eigs( 
-    int k,
-    void* d, void* v, 
-    const void* p, int n)
+extern "C" const int spectral_eigs( 
+    const int k,   // number of eigenvectors to return
+    void* d, void* v,  // pointer to the results
+    const void* p, const int n,  // pointer to the input and dimensionality
+    const int ncv, int maxit, double tol,
+    const int mode, const double sigma,
+    const int select)
 {
     typedef Map< Matrix<T1,Dynamic,Dynamic> > MapMatrix;
     typedef Map< Matrix<T3,Dynamic,Dynamic> > MapComplexMatrix;
@@ -32,47 +44,72 @@ extern "C" RET spectral_eigs(
     MapComplexMatrix D((T3*)d, k, 1);
     MapComplexMatrix V((T3*)v, n, k);
 
-    DenseGenMatProd<double> op(M);
-    int ncv = 2 * k + 1;
-    ncv = (ncv <= n) ? ncv : n;
-    GenEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigs(&op, k, ncv);
-    eigs.init();
-    int nconv = eigs.compute();
-    if(eigs.info() == 0)
-        D = eigs.eigenvalues();
-        V = eigs.eigenvectors();
-    return 0;
+    if(mode == 0) {
+        DenseGenMatProd<double> op(M);
+        GenEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigs(&op, k, ncv);
+        eigs.init();
+        int nconv = eigs.compute(maxit, tol, select);
+        if(eigs.info() == 0) {
+            D = eigs.eigenvalues();
+            V = eigs.eigenvectors();
+        } 
+        return eigs.info();
+    } else {
+        DenseGenRealShiftSolve<double> op(M);
+        GenEigsRealShiftSolver< double, LARGEST_MAGN, DenseGenRealShiftSolve<double> > eigs(&op, k, ncv, sigma);
+        eigs.init();
+        int nconv = eigs.compute(maxit, tol, select);
+        if(eigs.info() == 0) {
+            D = eigs.eigenvalues();
+            V = eigs.eigenvectors();
+        } 
+        return eigs.info();
+    }
 }
 
-extern "C" RET spectral_eigsh( 
+extern "C" const int spectral_eigsh( 
     int k,
     void* d, void* v, 
-    const void* p, int n)
+    const void* p, int n,
+    const int ncv, int maxit, double tol,
+    const int mode, const double sigma,
+    const int select)
 {
     typedef Map< Matrix<T1,Dynamic,Dynamic> > MapMatrix;
     MapMatrix M((T1*)p, n, n);
     MapMatrix D((T1*)d, k, 1);
     MapMatrix V((T1*)v, n, k);
 
-    DenseGenMatProd<double> op(M);
-    int ncv = 2 * k;
-    ncv = (ncv <= n) ? ncv : n;
-    SymEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigsh(&op, k, ncv);
-    eigsh.init();
-    int nconv = eigsh.compute();
-    if(eigsh.info() == 0)
-        D = eigsh.eigenvalues();
-        V = eigsh.eigenvectors();
-    return 0;
+    if(mode == 0) {
+        DenseGenMatProd<double> op(M);
+        SymEigsSolver< double, LARGEST_MAGN, DenseGenMatProd<double> > eigsh(&op, k, ncv);
+        eigsh.init();
+        int nconv = eigsh.compute(maxit, tol, select);
+        if(eigsh.info() == 0) {
+            D = eigsh.eigenvalues();
+            V = eigsh.eigenvectors();
+        }
+        return eigsh.info();
+    } else {
+        DenseSymShiftSolve<double> op(M);
+        SymEigsShiftSolver< double, LARGEST_MAGN, DenseSymShiftSolve<double> > eigsh(&op, k, ncv, sigma);
+        eigsh.init();
+        int nconv = eigsh.compute(maxit, tol, select);
+        if(eigsh.info() == 0) {
+            D = eigsh.eigenvalues();
+            V = eigsh.eigenvectors();
+        } 
+        return eigsh.info();
+    }
 }
 
-extern "C" RET spectral_seigs( 
+extern "C" const int spectral_seigs( 
     int k,
     void* d, void* v,
-    const void* values,
-    const void* outerIndexPtr,
-    const void* innerIndices,
-    int n, int s)
+    const void* values, const void* outerIndexPtr, const void* innerIndices, int n, int s,
+    const int ncv, int maxit, double tol,
+    const int mode, const double sigma,
+    const int select)
 {
     typedef Map< Matrix<T3,Dynamic,Dynamic> > MapComplexMatrix;
     typedef Map<const SparseMatrix<T1> > MapSparseMatrix;
@@ -80,25 +117,36 @@ extern "C" RET spectral_seigs(
     MapComplexMatrix D((T3*)d, k, 1);
     MapComplexMatrix V((T3*)v, n, k);
 
-    SparseGenMatProd<double> op(M);
-    int ncv = 2 * k + 1;
-    ncv = (ncv <= n) ? ncv : n;
-    GenEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigs(&op, k, ncv);
-    eigs.init();
-    int nconv = eigs.compute();
-    if(eigs.info() == 0)
-        D = eigs.eigenvalues();
-        V = eigs.eigenvectors();
-    return 0;
+    if(mode == 0) {
+        SparseGenMatProd<double> op(M);
+        GenEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigs(&op, k, ncv);
+        eigs.init();
+        int nconv = eigs.compute(maxit, tol, select);
+        if(eigs.info() == 0) {
+            D = eigs.eigenvalues();
+            V = eigs.eigenvectors();
+        }
+        return eigs.info();
+    } else {
+        SparseGenRealShiftSolve<double> op(M);
+        GenEigsRealShiftSolver< double, LARGEST_MAGN,  SparseGenRealShiftSolve<double> > eigs(&op, k, ncv, sigma);
+        eigs.init();
+        int nconv = eigs.compute(maxit, tol, select);
+        if(eigs.info() == 0) {
+            D = eigs.eigenvalues();
+            V = eigs.eigenvectors();
+        }
+        return eigs.info();
+    }
 }
 
-extern "C" RET spectral_seigsh( 
+extern "C" const int spectral_seigsh( 
     int k,
     void* d, void* v,
-    const void* values,
-    const void* outerIndexPtr,
-    const void* innerIndices,
-    int n, int s)
+    const void* values, const void* outerIndexPtr, const void* innerIndices, int n, int s,
+    const int ncv, int maxit, double tol,
+    const int mode, const double sigma,
+    const int select)
 {
     typedef Map< Matrix<T1,Dynamic,Dynamic> > MapMatrix;
     typedef Map<const SparseMatrix<T1> > MapSparseMatrix;
@@ -106,16 +154,56 @@ extern "C" RET spectral_seigsh(
     MapMatrix D((T1*)d, k, 1);
     MapMatrix V((T1*)v, n, k);
 
-    SparseGenMatProd<double> op(M);
-    int ncv = 2 * k;
-    ncv = (ncv <= n) ? ncv : n;
-    SymEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigsh(&op, k, ncv);
-    eigsh.init();
-    int nconv = eigsh.compute();
-    if(eigsh.info() == 0)
-        D = eigsh.eigenvalues();
-        V = eigsh.eigenvectors();
-    return 0;
+    if(mode == 0) {
+        SparseGenMatProd<double> op(M);
+        SymEigsSolver< double, LARGEST_MAGN, SparseGenMatProd<double> > eigsh(&op, k, ncv);
+        eigsh.init();
+        int nconv = eigsh.compute(maxit, tol, select);
+        if(eigsh.info() == 0) {
+            D = eigsh.eigenvalues();
+            V = eigsh.eigenvectors();
+        }
+    } else {
+        SparseSymShiftSolve<double> op(M);
+        SymEigsShiftSolver< double, LARGEST_MAGN, SparseSymShiftSolve<double> > eigsh(&op, k, ncv, 0);
+        eigsh.init();
+        int nconv = eigsh.compute(maxit, tol, select);
+        if(eigsh.info() == 0) {
+            D = eigsh.eigenvalues();
+            V = eigsh.eigenvectors();
+        }
+        return eigsh.info();
+    }
+}
+
+// Generalized eigen solver for real symmetric matrices
+extern "C" const int spectral_geigsh( 
+    int k,
+    void* d, void* v, 
+    const void* a, int n,
+    const void* values, const void* outerIndexPtr, const void* innerIndices, int s,
+    const int ncv, int maxit, double tol,
+    const int select)
+{
+    typedef Map< Matrix<T1,Dynamic,Dynamic> > MapMatrix;
+    typedef Map<const SparseMatrix<T1> > MapSparseMatrix;
+    MapMatrix A((T1*)a, n, n);
+    MapSparseMatrix B(n, n, s, (int*)outerIndexPtr, (int*)innerIndices, (T1*)values);
+    MapMatrix D((T1*)d, k, 1);
+    MapMatrix V((T1*)v, n, k);
+
+    DenseSymMatProd<double> op(A);
+    SparseCholesky<double> Bop(B);
+
+    SymGEigsSolver<double, SMALLEST_ALGE, DenseSymMatProd<double>, SparseCholesky<double>, GEIGS_CHOLESKY> geigs(&op, &Bop, k, ncv);
+
+    geigs.init();
+    int nconv = geigs.compute(maxit, tol, select);
+    if(geigs.info() == 0) {
+        D = geigs.eigenvalues();
+        V = geigs.eigenvectors();
+    }
+    return geigs.info();
 }
 
 

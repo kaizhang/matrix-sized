@@ -14,7 +14,10 @@ module Data.Matrix.Static.Internal
     , c_eigsh
     , c_seigs
     , c_seigsh
+    , c_geigsh
     , c_bdcsvd
+
+    , computationInfo
     ) where
 
 import Data.Complex (Complex)
@@ -89,22 +92,56 @@ foreign import ccall "eigen_eig"
           -> Ptr Double -> CInt -> IO CString
 
 foreign import ccall "spectral_eigs"
-    c_eigs :: CInt -> Ptr (Complex Double)
-           -> Ptr (Complex Double) -> Ptr Double -> CInt -> IO CString
+    c_eigs :: CInt      -- ^ The number of eigenvectors to search
+           -> Ptr (Complex Double)   -- ^ 
+           -> Ptr (Complex Double)   -- ^ 
+           -> Ptr Double   -- ^ Input matrix
+           -> CInt         -- ^ Matrix size
+           -> CInt   -- ^ ncv
+           -> CInt   -- ^ max iterations
+           -> Double  -- ^ tolerance
+           -> CInt
+           -> Double
+           -> CInt
+           -> IO CInt
 
 foreign import ccall "spectral_eigsh"
-    c_eigsh :: CInt -> Ptr Double -> Ptr Double -> Ptr Double -> CInt -> IO CString
+    c_eigsh :: CInt
+            -> Ptr Double -> Ptr Double
+            -> Ptr Double -> CInt
+            -> CInt -> CInt -> Double -> CInt -> Double -> CInt
+            -> IO CInt
 
 foreign import ccall "spectral_seigs"
-    c_seigs :: CInt -> Ptr (Complex Double) -> Ptr (Complex Double)
-            -> Ptr Double -> Ptr CInt -> Ptr CInt
-            -> CInt -> CInt -> IO CString
+    c_seigs :: CInt
+            -> Ptr (Complex Double) -> Ptr (Complex Double)
+            -> Ptr Double -> Ptr CInt -> Ptr CInt -> CInt -> CInt
+            -> CInt -> CInt -> Double -> CInt -> Double -> CInt
+            -> IO CInt
 
 foreign import ccall "spectral_seigsh"
-    c_seigsh :: CInt -> Ptr Double -> Ptr Double
-             -> Ptr Double -> Ptr CInt -> Ptr CInt
-             -> CInt -> CInt -> IO CString
+    c_seigsh :: CInt
+             -> Ptr Double -> Ptr Double
+             -> Ptr Double -> Ptr CInt -> Ptr CInt -> CInt -> CInt
+             -> CInt -> CInt -> Double -> CInt -> Double -> CInt
+             -> IO CInt
+
+foreign import ccall "spectral_geigsh"
+    c_geigsh :: CInt
+             -> Ptr Double -> Ptr Double
+             -> Ptr Double -> CInt
+             -> Ptr Double -> Ptr CInt -> Ptr CInt -> CInt
+             -> CInt -> CInt -> Double -> CInt
+             -> IO CInt
 
 foreign import ccall "eigen_bdcsvd"
     c_bdcsvd :: CInt -> Ptr a -> Ptr b -> Ptr a
              -> Ptr a -> CInt -> CInt -> IO CString
+
+computationInfo :: CInt -> Maybe String
+computationInfo 0 = Nothing
+computationInfo 1 = Just "NOT_COMPUTED"
+computationInfo 2 = Just "NOT_CONVERGING"
+computationInfo 3 = Just "NUMERICAL_ISSUE"
+computationInfo _ = Just "UNKNOWN ERROR"
+{-# INLINE computationInfo #-}
