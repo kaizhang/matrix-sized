@@ -34,7 +34,7 @@ import qualified Data.Vector.Storable as VS
 import Data.Vector.Storable (Vector)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.Complex (Complex)
-import Data.Singletons.Prelude hiding ((@@), type (==), type (-), type (<=))
+import Prelude.Singletons hiding ((@@), type (==), type (-), type (<=))
 import Data.Type.Equality
 import GHC.TypeLits
 import Data.Maybe (fromMaybe)

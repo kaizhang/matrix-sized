@@ -1,10 +1,10 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dd3cf2715b4f514ebdf5d567fea7a62069d49a338615dcff18eeb98634c78cd8
+-- hash: ac5811de3d5ceb05292b2fdca4747a5b7b26b9b4ebb00fa431d36cb84eab0204
 
 name:           matrix-sized
 version:        0.2.0
@@ -15,7 +15,7 @@ homepage:       https://github.com/kaizhang/matrix-sized#readme
 bug-reports:    https://github.com/kaizhang/matrix-sized/issues
 author:         Kai Zhang
 maintainer:     kai@kzhang.org
-copyright:      (c) 2020-2021 Kai Zhang
+copyright:      (c) 2020-2022 Kai Zhang
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
@@ -400,7 +400,8 @@ library
       Data.Matrix.Static.LinearAlgebra.Internal
   hs-source-dirs:
       src
-  default-extensions: StrictData
+  default-extensions:
+      StrictData
   ghc-options: -Wall
   cxx-options: -std=c++11
   include-dirs:
@@ -423,6 +424,7 @@ library
     , flat
     , primitive >=0.6.4.0
     , singletons
+    , singletons-base
     , vector >=0.11
   if flag(parallel)
     cc-options: -fopenmp
@@ -439,7 +441,8 @@ test-suite test
       Test.Utils
   hs-source-dirs:
       tests
-  default-extensions: StrictData
+  default-extensions:
+      StrictData
   ghc-options: -Wall -threaded
   build-depends:
       base
@@ -461,7 +464,8 @@ benchmark bench
       Paths_matrix_sized
   hs-source-dirs:
       benchmark
-  default-extensions: StrictData
+  default-extensions:
+      StrictData
   ghc-options: -Wall
   build-depends:
       base

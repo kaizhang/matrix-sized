@@ -21,6 +21,7 @@ module Data.Matrix.Static.Dense.Mutable
 import qualified Data.Vector.Generic.Mutable as GM
 import           Prelude                     hiding (read, replicate)
 import Data.Singletons
+import Prelude.Singletons ()
 import Control.Monad.Primitive     (PrimMonad, PrimState)
 
 import qualified Data.Matrix.Static.Generic.Mutable as C

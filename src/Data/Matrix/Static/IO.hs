@@ -30,7 +30,7 @@ import           Data.ByteString.Lex.Fractional (readExponential, readSigned)
 import           Data.ByteString.Lex.Integral   (readDecimal, readDecimal_)
 import Data.Singletons
 import Data.Maybe
-import Data.Singletons.TypeLits
+import GHC.TypeLits.Singletons
 import Data.Double.Conversion.ByteString (toShortest)
 import Text.Printf (printf)
 

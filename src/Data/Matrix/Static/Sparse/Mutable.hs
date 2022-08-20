@@ -18,6 +18,7 @@ import qualified Data.Vector.Storable as S
 import           Prelude                     hiding (read, replicate)
 import Foreign.C.Types
 import Data.Singletons
+import Prelude.Singletons ()
 
 import qualified Data.Matrix.Static.Generic.Mutable as C
 

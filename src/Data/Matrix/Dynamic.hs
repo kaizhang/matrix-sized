@@ -22,7 +22,7 @@ import qualified Data.Matrix.Static.Generic as C
 import qualified Data.Vector.Generic         as G
 import Data.Kind (Type)
 import Data.Singletons
-import Data.Singletons.TypeLits
+import GHC.TypeLits.Singletons
 import Flat (Flat(..))
 
 data Dynamic (m :: C.MatrixKind) (v :: Type -> Type) a where
